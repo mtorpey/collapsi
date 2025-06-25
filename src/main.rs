@@ -1,12 +1,10 @@
-use std::env;
-use std::ops::Add;
+use itertools::Itertools;
 use std::cmp::Eq;
 use std::collections::HashSet;
-use itertools::Itertools;
+use std::env;
+use std::ops::Add;
 
 const SIZE: usize = 4;
-
-
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -35,20 +33,23 @@ fn simulate_game(board: &mut Board) {
     loop {
         board.print();
         println!();
-        let player = if board.turn == 0 {"R"} else {"B"};
+        let player = if board.turn == 0 { "R" } else { "B" };
         match board.winning_move() {
             Some(m) => {
                 println!("{} confidently moves to {:?}", player, m);
                 board.make_move(m);
-            },
+            }
             None => {
                 let moves = board.legal_moves();
                 match moves.into_iter().next() {
                     Some(m) => {
                         println!("{} cannot win, but moves to {:?}", player, m);
                         board.make_move(m);
-                    },
-                    None => {println!("{} loses", player); break;},
+                    }
+                    None => {
+                        println!("{} loses", player);
+                        break;
+                    }
                 }
             }
         }
@@ -56,7 +57,7 @@ fn simulate_game(board: &mut Board) {
 }
 
 fn traverse_game_tree(board: &mut Board, counter: &mut u64) {
-    let moves = board.legal_moves();//.into_iter().sorted().collect();
+    let moves = board.legal_moves(); //.into_iter().sorted().collect();
     if moves.is_empty() {
         *counter += 1;
         if *counter % 100000 == 0 {
@@ -70,8 +71,6 @@ fn traverse_game_tree(board: &mut Board, counter: &mut u64) {
     }
 }
 
-
-
 struct Board {
     cards: [[u8; SIZE]; SIZE],
     pawns: [Point; 2],
@@ -82,10 +81,12 @@ struct Board {
 impl Board {
     fn new() -> Board {
         Board {
-            cards: [[1, 2, 2, 3],
-                    [4, 1, 2, 0], // should be 0 last
-                    [3, 1, 2, 3],
-                    [0, 3, 1, 4]],
+            cards: [
+                [1, 2, 2, 3],
+                [4, 1, 2, 0], // should be 0 last
+                [3, 1, 2, 3],
+                [0, 3, 1, 4],
+            ],
             pawns: [Point(1, 3), Point(3, 0)],
             turn: 0,
             moves: vec![],
@@ -135,7 +136,7 @@ impl Board {
                 (0..SIZE)
                     .cartesian_product(0..SIZE)
                     .map(|(x, y)| Point(x, y))
-                    .filter(|p| self.card(*p) != 0 && !self.pawns.contains(p))
+                    .filter(|p| self.card(*p) != 0 && !self.pawns.contains(p)),
             );
         }
 
@@ -161,7 +162,10 @@ impl Board {
 
     fn undo_move(&mut self) {
         // Get history
-        let (dist, from) = self.moves.pop().expect("We should never undo a fresh board");
+        let (dist, from) = self
+            .moves
+            .pop()
+            .expect("We should never undo a fresh board");
 
         // Undo move
         self.turn = 1 - self.turn;
@@ -177,19 +181,19 @@ impl Board {
     fn print(&self) {
         for row in 0..SIZE {
             for col in 0..SIZE {
-                let marker =
-                    if self.pawns[0] == Point(row, col) { "R"
-                    } else if self.pawns[1] == Point(row, col) { "B"
-                    } else { " "
-                    };
+                let marker = if self.pawns[0] == Point(row, col) {
+                    "R"
+                } else if self.pawns[1] == Point(row, col) {
+                    "B"
+                } else {
+                    " "
+                };
                 print!("{}{}{}", marker, self.cards[row][col], marker);
             }
             println!();
         }
     }
 }
-
-
 
 #[derive(Copy, Clone, Debug, Hash, Ord, PartialOrd, PartialEq, Eq)]
 struct Point(usize, usize);
@@ -206,7 +210,12 @@ impl Add for Point {
 
 impl Point {
     fn neighbors(&self) -> [Point; 4] {
-        const DIRECTIONS: [Point; 4] = [Point(1, 0), Point(SIZE-1, 0), Point(0, 1), Point(0, SIZE-1)];
+        const DIRECTIONS: [Point; 4] = [
+            Point(1, 0),
+            Point(SIZE - 1, 0),
+            Point(0, 1),
+            Point(0, SIZE - 1),
+        ];
         DIRECTIONS.map(|d| *self + d)
     }
 }
