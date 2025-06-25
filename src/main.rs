@@ -9,6 +9,11 @@ const SIZE: usize = 4;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
+    for board in Board::all_boards() {
+        println!(".");
+    }
+    return;
+
     let mut board = Board::new();
 
     if args.len() <= 1 {
@@ -91,6 +96,35 @@ impl Board {
             turn: 0,
             moves: vec![],
         }
+    }
+
+    fn all_boards() -> Vec<Board> {
+        let mut boards = vec![];
+        for pawn2 in [1, 2, 3, 5, 6, 7, 10, 11] {
+            let mut remaining = [0, 4, 4, 4, 2];
+            for perm in unique_permutations(&mut remaining) {
+                let mut cards = vec![0];
+                cards.extend_from_slice(&perm[.. pawn2 - 1]);
+                cards.push(0);
+                cards.extend_from_slice(&perm[pawn2 - 1 ..]);
+                println!("{:?}", cards);
+            }
+            //for fours in (1..=15).filter(|i| *i != pawn2).permutations(2) {
+                //let cards = [5; 16];
+                //cards[0] = 0;
+                //cards[pawn2] = 0;
+                //cards[fours[0]] = 4;
+                //cards[fours[1]] = 4;
+                //let board = Board{
+                //    cards: cards.chunks(4),
+                //    pawns: [Point(0, 0), pawn2],
+                //    turn: 0,
+                //    moves: vec![],
+                //};
+                //boards.push(board);
+            //}
+        }
+        boards
     }
 
     fn card(&self, point: Point) -> u8 {
@@ -218,4 +252,19 @@ impl Point {
         ];
         DIRECTIONS.map(|d| *self + d)
     }
+}
+
+fn unique_permutations(remaining: &mut [usize; 5]) -> Vec<&mut Vec<usize>> {
+    let mut out = vec![];
+    for value in 1..remaining.len() {
+        if remaining[value] > 0 {
+            remaining[value] -= 1;
+            for perm in unique_permutations(remaining) {
+                perm.push(value);
+                out.push(perm);
+            }
+            remaining[value] += 1;
+        }
+    }
+    out
 }
