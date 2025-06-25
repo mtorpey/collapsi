@@ -1,3 +1,4 @@
+use std::env;
 use std::ops::Add;
 use std::cmp::Eq;
 use std::collections::HashSet;
@@ -8,16 +9,53 @@ const SIZE: usize = 4;
 
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
+
     let mut board = Board::new();
-    board.print();
 
-    let mut counter = 0;
-    explore_game_tree(&mut board, &mut counter);
-
-    println!("{} games tried", counter);
+    if args.len() <= 1 {
+        println!("Options: --solve --simulate --full");
+    } else if &args[1] == "--full" {
+        let mut counter = 0;
+        traverse_game_tree(&mut board, &mut counter);
+        println!("{} games tried", counter);
+    } else if &args[1] == "--simulate" {
+        simulate_game(&mut board);
+    } else if &args[1] == "--solve" {
+        match board.winning_move() {
+            Some(m) => println!("R wins by playing {:?}", m),
+            None => println!("B wins, whatever R plays"),
+        };
+    } else {
+        println!("Options: --solve --simulate --full");
+    }
 }
 
-fn explore_game_tree(board: &mut Board, counter: &mut u64) {
+fn simulate_game(board: &mut Board) {
+    loop {
+        board.print();
+        println!();
+        let player = if board.turn == 0 {"R"} else {"B"};
+        match board.winning_move() {
+            Some(m) => {
+                println!("{} confidently moves to {:?}", player, m);
+                board.make_move(m);
+            },
+            None => {
+                let moves = board.legal_moves();
+                match moves.into_iter().next() {
+                    Some(m) => {
+                        println!("{} cannot win, but moves to {:?}", player, m);
+                        board.make_move(m);
+                    },
+                    None => {println!("{} loses", player); break;},
+                }
+            }
+        }
+    }
+}
+
+fn traverse_game_tree(board: &mut Board, counter: &mut u64) {
     let moves = board.legal_moves();//.into_iter().sorted().collect();
     if moves.is_empty() {
         *counter += 1;
@@ -26,12 +64,10 @@ fn explore_game_tree(board: &mut Board, counter: &mut u64) {
         }
     }
     for m in moves {
-        //println!("{:?}", m);
         board.make_move(m);
-        explore_game_tree(board, counter);
+        traverse_game_tree(board, counter);
         board.undo_move();
     }
-    //println!("{:?}", moves);
 }
 
 
@@ -59,6 +95,18 @@ impl Board {
     fn card(&self, point: Point) -> u8 {
         let Point(x, y) = point;
         self.cards[x][y]
+    }
+
+    fn winning_move(&mut self) -> Option<Point> {
+        for m in self.legal_moves() {
+            self.make_move(m);
+            if self.winning_move().is_none() {
+                self.undo_move();
+                return Some(m);
+            }
+            self.undo_move();
+        }
+        None
     }
 
     fn reachable(&self, point: Point, dist: u8, visited: &mut Vec<Point>) -> HashSet<Point> {
@@ -130,8 +178,8 @@ impl Board {
         for row in 0..SIZE {
             for col in 0..SIZE {
                 let marker =
-                    if self.pawns[0] == Point(row, col) { "r"
-                    } else if self.pawns[1] == Point(row, col) { "b"
+                    if self.pawns[0] == Point(row, col) { "R"
+                    } else if self.pawns[1] == Point(row, col) { "B"
                     } else { " "
                     };
                 print!("{}{}{}", marker, self.cards[row][col], marker);
