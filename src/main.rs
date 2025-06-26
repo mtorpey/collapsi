@@ -104,7 +104,7 @@ impl Board {
 
     fn all_boards() -> Vec<Board> {
         let mut boards = vec![];
-        for pawn2 in [1, 2, 3, 5, 6, 7, 10, 11] {
+        for pawn2 in [1, 2, 5, 6, 10] {
             for perm in unique_permutations(vec![], &[0, 4, 4, 4, 2]) {
                 let mut cards = vec![0];
                 cards.extend_from_slice(&perm[.. pawn2 - 1]);
