@@ -5,3 +5,5 @@ edition = "2024"
 
 [dependencies]
 itertools = "0"
+rayon = "1"
+simple-tqdm = {version = "0.2", features = ["rayon"]}

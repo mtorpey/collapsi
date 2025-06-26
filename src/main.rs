@@ -1,4 +1,6 @@
 use itertools::Itertools;
+use rayon::prelude::*;
+use simple_tqdm::ParTqdm;
 use std::cmp::Eq;
 use std::collections::HashSet;
 use std::env;
@@ -8,16 +10,18 @@ const SIZE: usize = 4;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-
-    for board in Board::all_boards() {
-        println!(".");
-    }
-    return;
-
     let mut board = Board::new();
 
     if args.len() <= 1 {
-        println!("Options: --solve --simulate --full");
+        println!("Options: --all --solve --simulate --full");
+    } else if &args[1] == "--all" {
+        let red_wins = Board::all_boards()
+            .par_iter_mut()
+            .tqdm()
+            .map(Board::winning_move)
+            .map(|r| if r.is_some() { 1 } else { 0 })
+            .sum::<usize>();
+        println!("R wins {} total", red_wins);
     } else if &args[1] == "--full" {
         let mut counter = 0;
         traverse_game_tree(&mut board, &mut counter);
@@ -30,7 +34,7 @@ fn main() {
             None => println!("B wins, whatever R plays"),
         };
     } else {
-        println!("Options: --solve --simulate --full");
+        println!("Options: --all --solve --simulate --full");
     }
 }
 
@@ -101,29 +105,29 @@ impl Board {
     fn all_boards() -> Vec<Board> {
         let mut boards = vec![];
         for pawn2 in [1, 2, 3, 5, 6, 7, 10, 11] {
-            let mut remaining = [0, 4, 4, 4, 2];
-            for perm in unique_permutations(&mut remaining) {
+            for perm in unique_permutations(vec![], &[0, 4, 4, 4, 2]) {
                 let mut cards = vec![0];
                 cards.extend_from_slice(&perm[.. pawn2 - 1]);
                 cards.push(0);
                 cards.extend_from_slice(&perm[pawn2 - 1 ..]);
-                println!("{:?}", cards);
+                //println!("{:?}", cards);
+                boards.push(Board{
+                    cards: [
+                        cards[0..4].try_into().unwrap(),
+                        cards[4..8].try_into().unwrap(),
+                        cards[8..12].try_into().unwrap(),
+                        cards[12..16].try_into().unwrap(),
+                    ],
+                    pawns: [Point(0, 0), Point(pawn2 / 4, pawn2 % 4)],
+                    turn: 0,
+                    moves: vec![],
+                });
+                if boards.len() % 1000000 == 0 {
+                    println!("{}", boards.len());
+                }
             }
-            //for fours in (1..=15).filter(|i| *i != pawn2).permutations(2) {
-                //let cards = [5; 16];
-                //cards[0] = 0;
-                //cards[pawn2] = 0;
-                //cards[fours[0]] = 4;
-                //cards[fours[1]] = 4;
-                //let board = Board{
-                //    cards: cards.chunks(4),
-                //    pawns: [Point(0, 0), pawn2],
-                //    turn: 0,
-                //    moves: vec![],
-                //};
-                //boards.push(board);
-            //}
         }
+        println!("{}", boards.len());
         boards
     }
 
@@ -254,17 +258,22 @@ impl Point {
     }
 }
 
-fn unique_permutations(remaining: &mut [usize; 5]) -> Vec<&mut Vec<usize>> {
+fn unique_permutations(start: Vec<u8>, remaining: &[u8; 5]) -> Vec<Vec<u8>> {
+    //println!("{:?}", start);
     let mut out = vec![];
     for value in 1..remaining.len() {
         if remaining[value] > 0 {
-            remaining[value] -= 1;
-            for perm in unique_permutations(remaining) {
-                perm.push(value);
+            let mut rem_new = remaining.clone();
+            rem_new[value] -= 1;
+            let mut start_new = start.clone();
+            start_new.push(value as u8);
+            for perm in unique_permutations(start_new, &rem_new) {
                 out.push(perm);
             }
-            remaining[value] += 1;
         }
+    }
+    if out.is_empty() {
+        out.push(start);
     }
     out
 }
