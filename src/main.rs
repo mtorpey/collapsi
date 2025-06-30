@@ -30,16 +30,20 @@ fn main() {
             .map(Board::best_move_by_cards_remaining)
             .map(|(m, score)| {
                 if score.unsigned_abs() > 8 {
-                    println!("R plays {:?} and gets a score of {}", m.expect("First move should never lose"), score);
+                    println!(
+                        "R plays {:?} and gets a score of {}",
+                        m.expect("First move should never lose"),
+                        score
+                    );
                 }
                 score
             })
             .collect::<Vec<i8>>()
             .into_iter()
-            .fold(
-                [0; 16],
-                |mut results, score| {results[score.unsigned_abs() as usize] += 1; results}
-            );
+            .fold([0; 16], |mut results, score| {
+                results[score.unsigned_abs() as usize] += 1;
+                results
+            });
         println!("Scores: {:?}", scores);
     } else if &args[1] == "--full" {
         let mut counter = 0;
@@ -131,11 +135,11 @@ impl Board {
         for pawn2 in [1, 2, 5, 6, 10] {
             for perm in unique_permutations(vec![], &[0, 4, 4, 4, 2]) {
                 let mut cards = vec![0];
-                cards.extend_from_slice(&perm[.. pawn2 - 1]);
+                cards.extend_from_slice(&perm[..pawn2 - 1]);
                 cards.push(0);
-                cards.extend_from_slice(&perm[pawn2 - 1 ..]);
+                cards.extend_from_slice(&perm[pawn2 - 1..]);
                 //println!("{:?}", cards);
-                boards.push(Board{
+                boards.push(Board {
                     cards: [
                         cards[0..4].try_into().unwrap(),
                         cards[4..8].try_into().unwrap(),
@@ -176,7 +180,11 @@ impl Board {
         self.best_move_by_cards_remaining_bounded(-16, 16)
     }
 
-    fn best_move_by_cards_remaining_bounded(&mut self, mut at_least: i8, mut at_most: i8) -> (Option<Point>, i8) {
+    fn best_move_by_cards_remaining_bounded(
+        &mut self,
+        mut at_least: i8,
+        mut at_most: i8,
+    ) -> (Option<Point>, i8) {
         let moves = self.legal_moves();
         if moves.is_empty() {
             let cards_remaining = 16 - self.moves.len() as i8;
@@ -185,7 +193,7 @@ impl Board {
                 return (None, cards_remaining);
             } else {
                 // P1 wins
-                return (None, - cards_remaining);
+                return (None, -cards_remaining);
             }
         } else {
             let mut best_score = if self.turn == 0 { -16 } else { 16 }; // worst case
@@ -193,7 +201,8 @@ impl Board {
             for m in moves {
                 self.make_move(m); // note: this flips self.turn
                 let (_, score) = self.best_move_by_cards_remaining_bounded(at_least, at_most);
-                if self.turn == 1 { // This was P0's turn
+                if self.turn == 1 {
+                    // This was P0's turn
                     if score > best_score {
                         best_score = score;
                         best_move = m;
@@ -205,7 +214,8 @@ impl Board {
                             at_least = best_score;
                         }
                     }
-                } else { // This was P1's turn
+                } else {
+                    // This was P1's turn
                     if score < best_score {
                         best_score = score;
                         best_move = m;
