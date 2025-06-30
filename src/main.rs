@@ -25,6 +25,7 @@ fn main() {
     } else if &args[1] == "--all-length" {
         let scores = Board::all_boards()
             .par_iter_mut()
+            //.take(300)
             .tqdm()
             .map(Board::best_move_by_cards_remaining)
             .map(|(m, score)| {
@@ -172,6 +173,10 @@ impl Board {
     }
 
     fn best_move_by_cards_remaining(&mut self) -> (Option<Point>, i8) {
+        self.best_move_by_cards_remaining_bounded(-16, 16)
+    }
+
+    fn best_move_by_cards_remaining_bounded(&mut self, mut at_least: i8, mut at_most: i8) -> (Option<Point>, i8) {
         let moves = self.legal_moves();
         if moves.is_empty() {
             let cards_remaining = 16 - self.moves.len() as i8;
@@ -183,15 +188,35 @@ impl Board {
                 return (None, - cards_remaining);
             }
         } else {
-            // TODO: alpha-beta pruning
             let mut best_score = if self.turn == 0 { -16 } else { 16 }; // worst case
             let mut best_move = Point(0, 0);
             for m in moves {
                 self.make_move(m); // note: this flips self.turn
-                let (_, score) = self.best_move_by_cards_remaining();
-                if (self.turn == 1 && score > best_score) || (self.turn == 0 && score < best_score) {
-                    best_score = score;
-                    best_move = m;
+                let (_, score) = self.best_move_by_cards_remaining_bounded(at_least, at_most);
+                if self.turn == 1 { // This was P0's turn
+                    if score > best_score {
+                        best_score = score;
+                        best_move = m;
+                        if best_score >= at_most {
+                            self.undo_move();
+                            break;
+                        }
+                        if best_score > at_least {
+                            at_least = best_score;
+                        }
+                    }
+                } else { // This was P1's turn
+                    if score < best_score {
+                        best_score = score;
+                        best_move = m;
+                        if best_score <= at_least {
+                            self.undo_move();
+                            break;
+                        }
+                        if best_score < at_most {
+                            at_most = best_score;
+                        }
+                    }
                 }
                 self.undo_move();
             }
