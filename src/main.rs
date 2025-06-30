@@ -22,6 +22,24 @@ fn main() {
             .map(|r| if r.is_some() { 1 } else { 0 })
             .sum::<usize>();
         println!("R wins {} total", red_wins);
+    } else if &args[1] == "--all-length" {
+        let scores = Board::all_boards()
+            .par_iter_mut()
+            .tqdm()
+            .map(Board::best_move_by_cards_remaining)
+            .map(|(m, score)| {
+                if score.unsigned_abs() > 8 {
+                    println!("R plays {:?} and gets a score of {}", m.expect("First move should never lose"), score);
+                }
+                score
+            })
+            .collect::<Vec<i8>>()
+            .into_iter()
+            .fold(
+                [0; 16],
+                |mut results, score| {results[score.unsigned_abs() as usize] += 1; results}
+            );
+        println!("Scores: {:?}", scores);
     } else if &args[1] == "--full" {
         let mut counter = 0;
         traverse_game_tree(&mut board, &mut counter);
@@ -32,6 +50,11 @@ fn main() {
         match board.winning_move() {
             Some(m) => println!("R wins by playing {:?}", m),
             None => println!("B wins, whatever R plays"),
+        };
+    } else if &args[1] == "--solve-length" {
+        match board.best_move_by_cards_remaining() {
+            (Some(m), score) => println!("R plays {:?} and gets a score of {}", m, score),
+            _ => eprintln!("Something went wrong"),
         };
     } else {
         println!("Options: --all --solve --simulate --full");
@@ -146,6 +169,34 @@ impl Board {
             self.undo_move();
         }
         None
+    }
+
+    fn best_move_by_cards_remaining(&mut self) -> (Option<Point>, i8) {
+        let moves = self.legal_moves();
+        if moves.is_empty() {
+            let cards_remaining = 16 - self.moves.len() as i8;
+            if cards_remaining % 2 == 1 {
+                // P0 wins
+                return (None, cards_remaining);
+            } else {
+                // P1 wins
+                return (None, - cards_remaining);
+            }
+        } else {
+            // TODO: alpha-beta pruning
+            let mut best_score = if self.turn == 0 { -16 } else { 16 }; // worst case
+            let mut best_move = Point(0, 0);
+            for m in moves {
+                self.make_move(m); // note: this flips self.turn
+                let (_, score) = self.best_move_by_cards_remaining();
+                if (self.turn == 1 && score > best_score) || (self.turn == 0 && score < best_score) {
+                    best_score = score;
+                    best_move = m;
+                }
+                self.undo_move();
+            }
+            (Some(best_move), best_score)
+        }
     }
 
     fn reachable(&self, point: Point, dist: u8, visited: &mut Vec<Point>) -> HashSet<Point> {
