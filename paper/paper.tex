@@ -1,0 +1,77 @@
+\documentclass[a4paper, twocolumn]{article}
+
+\usepackage{fullpage}
+\usepackage[UKenglish]{isodate}
+\usepackage{url}
+
+\title{Collapsi is strongly solved}
+\author{Michael Young\\University of St Andrews}
+
+\begin{document}
+
+\maketitle
+
+\abstract{ Collapsi is a two-player game of complete information released in
+  June 2025 by Mark~S.~Ball of \emph{Riffle Shuffle \& Roll}. Played with two
+  pawns on a torroidal board of 16 randomly mixed playing cards, players take it
+  in turns to move based on the value of the card they sit on, with the game
+  ending when a player has no legal moves.
+
+  The number of possible deals after symmetry breaking is low enough, and the
+  game tree is shallow enough, to make an exhaustive analysis of the game
+  feasible. A search was applied revealing that the first player can force a win
+  in TODO of deals, with the second player able forcing a win in all others. In
+  TODO of deals the losing player can prolong the game to the maximum length of
+  14 plies, and a win can never be forced in less than 7 plies.
+}
+
+\section{The game}
+
+The rules for Collapsi are hosted by the designer in a living document
+\cite{rules} and in the game's introductory YouTube video \cite{youtube}. The
+board is a set of 16 playing cards taken from a standard deck -- four aces, four
+2s, four 3s, two 4s and two jacks -- shuffled and arranged into a $4\times 4$
+grid, an example layout being shown in Figure \ref{fig:board}. Each player uses
+one pawn (red or blue) and places it on a jack, then play begins.
+
+\begin{figure}[h]
+  \centering
+  \begin{tabular}{c c c c}
+    \framebox{A} & \framebox{2} & \framebox{2} & \framebox{3} \\
+    \framebox{4} & \framebox{A} & \framebox{2} & \framebox{J} \\
+    \framebox{3} & \framebox{A} & \framebox{2} & \framebox{3} \\
+    \framebox{J} & \framebox{3} & \framebox{A} & \framebox{4}
+  \end{tabular}
+
+  \caption{Example Collapsi board layout}
+  \label{fig:board}
+\end{figure}
+
+\section{Search space}
+
+\section{Algorithm}
+
+\section{Results}
+
+\section{Future work}
+
+\begin{thebibliography}{9}
+
+\bibitem{rules}
+  Mark~S.~Ball,
+  \textit{Collapsi 1.3.0},
+  \url{
+    https://docs.google.com/document/d/1MV1vvV1Aq7ikRU7lF8Y7QQD-akH3ybHmk2fKs6p61lE
+  }
+  (Accessed 2025-06-30).
+
+\bibitem{youtube}
+  Riffle Shuffle \& Roll,
+  \textit{How to Play Collapsi: NEW two player abstract game with playing cards!}
+  YouTube video,
+  \url{https://youtu.be/6vYEHdjlw3g}
+  (Accessed 2025-06-30).
+
+\end{thebibliography}
+
+\end{document}
