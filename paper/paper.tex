@@ -69,6 +69,11 @@ be entered for the rest of the game. The first player who cannot make a legal
 move loses the game, which must therefore happen in at most 14 plies.
 
 
+\section{Game length}
+
+
+
+
 \section{Search space}
 
 To find a solution, all possible arrangements of the 16 cards must be
@@ -113,14 +118,81 @@ when searching.
 Overall, with the position of one joker fixed, 5 options for the second joker,
 and the remaining 14 cards split into three sets of four with the two 4s left
 over, the number of deals that must be considered is equal to
-$$5~\binom{14}{4} \binom{10}{4} \binom{6}{4} = 15~765~750.$$
+$$5~\binom{14}{4} \binom{10}{4} \binom{6}{4} = 15~765~750,$$
+a number much more amenable to search than the naive space initially considered.
+
+Different deals have game trees of different sizes, but informal experiments
+show that around 900,000 possible games can be played from a typical deal.
 
 
-\section{Algorithm}
+\section{Computation}
+
+A Rust library for enumerating and exploring Collapsi games was written
+\cite{github} and exhaustive experiments performed using a 13th Gen Intel Core
+i5-13500 processor. All 15~765~750 deals can be enumerated in 3.3 seconds and
+then explored in parallel.
+
+The algorithm used for evaluating game positions was minimax search with
+alpha--beta pruning and unlimited depth. This was applied both for the simple
+goal of finding a winning move, and for the stricter goal of maximising score
+with respect to game length.
+
+Given a new board, it can be determined whether the current player is in a
+winning position, and if so a winning move can be determined, in around 12
+milliseconds. To find a move that maximises the current player's score with
+respect to turn length takes slightly longer, around 18 milliseconds. These very
+short computation times suggest that there would be little value in the creation
+of a database of game positions, since the results can be computed on demand for
+most relevant applications.
+
+The result with game-length perfect play was determined for all deals in a
+search that took 7 hours and 29 minutes using 20 cores. All results can be
+reproduced by following the instructions provided in the library's readme file
+\cite{github}.
+
 
 \section{Results}
 
+The length of games given game-length-perfect play from both sides is shown in
+Table~\ref{tab:game-length}.
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{r r r c}
+    \hline
+    Plies & Deals & (\%) & Winner \\
+    \hline
+    $\leq 6$ & 0 & 0.0 & ---\\
+    7 & 8 & 0.0 & Red \\
+    8 & 62604 & 0.4 & Blue \\
+    9 & 30470 & 0.2 & Red \\
+    10 & 1156548 & 7.3 & Blue \\
+    11 & 1869785 & 11.9 & Red \\
+    12 & 7590554 & 48.1 & Blue \\
+    13 & 4054671 & 25.7 & Red \\
+    14 & 1001110 & 6.3 & Blue \\
+    \hline
+  \end{tabular}
+  \caption{Length of game with perfect play}
+  \label{tab:game-length}
+\end{table}
+
+
+
 \section{Future work}
+
+In late June 2025, Collapsi's designer offered an updated set of rules for the
+game, described as version 1.2.0, with minor modifications to the rules for
+jokers. The library should be expanded to allow for analysis of the new game,
+which may differ in its theoretical status.
+
+The game exploration was performed exhaustively without consideration for how
+this solution could inform human play. Now that a library exists and perfect
+moves can be retrieved easily, its moves should be considered qualitatively,
+since they might highlight strategies that players could follow without deep
+analysis to improve their play, especially in the early game where it can be
+difficult to understand the value of a move.
+
 
 \begin{thebibliography}{9}
 
@@ -137,6 +209,13 @@ $$5~\binom{14}{4} \binom{10}{4} \binom{6}{4} = 15~765~750.$$
   YouTube video,
   \url{https://youtu.be/6vYEHdjlw3g}
   (Accessed 2025-06-30).
+
+\bibitem{github}
+  M.~Young,
+  \textit{collapsi-solver},
+  Rust crate,
+  2025,
+  \url{https://github.com/mtorpey/collapsi-solver}
 
 \end{thebibliography}
 
