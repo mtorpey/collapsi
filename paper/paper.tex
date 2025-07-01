@@ -1,8 +1,15 @@
 \documentclass[a4paper, twocolumn]{article}
 
+\usepackage{amsmath}
 \usepackage{fullpage}
+\usepackage[hidelinks]{hyperref}
 \usepackage[UKenglish]{isodate}
+\usepackage{tcolorbox}
 \usepackage{url}
+
+\tcbset{height=0.9cm, width=0.8cm, valign=center, halign=center, left=0cm, right=0cm}
+\setlength{\tabcolsep}{0.1cm}
+\newcommand\card[1]{\begin{tcolorbox}#1\end{tcolorbox}}
 
 \title{Collapsi is strongly solved}
 \author{Michael Young\\University of St Andrews}
@@ -20,34 +27,94 @@
   The number of possible deals after symmetry breaking is low enough, and the
   game tree is shallow enough, to make an exhaustive analysis of the game
   feasible. A search was applied revealing that the first player can force a win
-  in TODO of deals, with the second player able forcing a win in all others. In
-  TODO of deals the losing player can prolong the game to the maximum length of
+  in 37.8\% of deals, with the second player able forcing a win in all others. In
+  6.3\% of deals the losing player can prolong the game to the maximum length of
   14 plies, and a win can never be forced in less than 7 plies.
 }
+
 
 \section{The game}
 
 The rules for Collapsi are hosted by the designer in a living document
 \cite{rules} and in the game's introductory YouTube video \cite{youtube}. The
 board is a set of 16 playing cards taken from a standard deck -- four aces, four
-2s, four 3s, two 4s and two jacks -- shuffled and arranged into a $4\times 4$
-grid, an example layout being shown in Figure \ref{fig:board}. Each player uses
-one pawn (red or blue) and places it on a jack, then play begins.
+2s, four 3s, two 4s and two jokers -- shuffled and arranged into a $4\times 4$
+grid, an example layout being shown in Figure \ref{fig:board}. Each player takes
+a pawn (red or blue) and places it on a joker, then players take turns
+(\textit{plies}) to move with red going first.
 
 \begin{figure}[h]
   \centering
   \begin{tabular}{c c c c}
-    \framebox{A} & \framebox{2} & \framebox{2} & \framebox{3} \\
-    \framebox{4} & \framebox{A} & \framebox{2} & \framebox{J} \\
-    \framebox{3} & \framebox{A} & \framebox{2} & \framebox{3} \\
-    \framebox{J} & \framebox{3} & \framebox{A} & \framebox{4}
+    \card{A} & \card{2} & \card{2} & \card{3} \\
+    \card{4} & \card{A} & \card{2} & \card{J} \\
+    \card{3} & \card{A} & \card{2} & \card{3} \\
+    \card{J} & \card{3} & \card{A} & \card{4}
   \end{tabular}
 
   \caption{Example Collapsi board layout}
   \label{fig:board}
 \end{figure}
 
+On a player's first turn they may choose to move 1, 2, 3 or 4 spaces; on
+subsequent turns they must move exactly the number of spaces shown on the card
+they begin from, with ace representing 1.  (TODO: change of rule for jokers?)
+Moving is done orthogonally and the grid is torroidal so that the top edge is
+joined to the bottom, and the left to the right. On a given move, a pawn may not
+enter a given space twice, and may not end its movement on the space occupied by
+the opponent's pawn.
+
+After a player's ply, the card they began from is turned face down and cannot
+be entered for the rest of the game. The first player who cannot make a legal
+move loses the game, which must therefore happen in at most 14 plies.
+
+
 \section{Search space}
+
+To find a solution, all possible arrangements of the 16 cards must be
+considered, naively a space of $16! = 2.1 \times 10^{13}$ possible
+arrangements. However, various symmetries allow us to reduce the search space by
+eliminating deals that are strategically equivalent, resulting in a tractable
+number of deals that need to be considered.
+
+First observe that suit plays no part in the game: all 3s are equivalent, and so
+on. Note also that a player's start position has no effect, since a move of 1--4
+allows them to reach any uncovered space on their first ply; this means the two
+jokers can be considered equivalent.
+
+The torroidal nature of the board means that the bottom row can be moved to the
+top, or the right column moved to the left edge, without materially affecting
+play. Each of these operations can be cycled, so that any row can be chosen as
+the top one and any column as the left one. We model this by only considering
+boards with a joker in the top-left corner, without loss of generality.
+
+We can also constrain the position of the second joker without loss of
+generality, to take advantage of reflections in the board. Two possible
+positions for the second joker are strategically equivalent if the $(x, y)$
+distance between the first joker and the second is the same in both cases,
+possibly including an $x$--$y$ swap. The possible distances are shown in
+Figure~\ref{fig:joker-distances}, with one representative of each distance
+highlighted: these 5 positions are the positions considered for the second joker
+when searching.
+
+\begin{figure}[h]
+  \centering
+  \begin{tabular}{c c c c}
+    \card{J} & \card{\textbf{0,1}} & \card{\textbf{0,2}} & \card{0,1} \\
+    \card{0,1} & \card{\textbf{1,1}} & \card{\textbf{1,2}} & \card{1,1} \\
+    \card{0,2} & \card{1,2} & \card{\textbf{2,2}} & \card{1,2} \\
+    \card{0,1} & \card{1,1} & \card{1,2} & \card{1,1}
+  \end{tabular}
+
+  \caption{Distances of spaces from top-left joker}
+  \label{fig:joker-distances}
+\end{figure}
+
+Overall, with the position of one joker fixed, 5 options for the second joker,
+and the remaining 14 cards split into three sets of four with the two 4s left
+over, the number of deals that must be considered is equal to
+$$5~\binom{14}{4} \binom{10}{4} \binom{6}{4} = 15~765~750.$$
+
 
 \section{Algorithm}
 
@@ -59,10 +126,9 @@ one pawn (red or blue) and places it on a jack, then play begins.
 
 \bibitem{rules}
   Mark~S.~Ball,
-  \textit{Collapsi 1.3.0},
-  \url{
-    https://docs.google.com/document/d/1MV1vvV1Aq7ikRU7lF8Y7QQD-akH3ybHmk2fKs6p61lE
-  }
+  \textit{Collapsi 1.1.0},
+  \url{https://boardgamegeek.com/filepage/301918/collapsi-official-rules}
+  %\url{https://docs.google.com/document/d/1MV1vvV1Aq7ikRU7lF8Y7QQD-akH3ybHmk2fKs6p61lE}
   (Accessed 2025-06-30).
 
 \bibitem{youtube}
