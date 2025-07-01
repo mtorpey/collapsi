@@ -1,6 +1,7 @@
 use itertools::Itertools;
 use rayon::prelude::*;
 use simple_tqdm::ParTqdm;
+//use simple_tqdm::Tqdm;
 use std::cmp::Eq;
 use std::collections::HashSet;
 use std::env;
@@ -13,7 +14,7 @@ fn main() {
     let mut board = Board::new();
 
     if args.len() <= 1 {
-        println!("Options: --all --solve --simulate --full");
+        println!("Specify an option");
     } else if &args[1] == "--all" {
         let red_wins = Board::all_boards()
             .par_iter_mut()
@@ -25,11 +26,11 @@ fn main() {
     } else if &args[1] == "--all-length" {
         let scores = Board::all_boards()
             .par_iter_mut()
-            //.take(300)
             .tqdm()
-            .map(Board::best_move_by_cards_remaining)
-            .map(|(m, score)| {
+            .map(|b| (b.best_move_by_cards_remaining(), b))
+            .map(|((m, score), b)| {
                 if score.unsigned_abs() > 8 {
+                    b.print();
                     println!(
                         "R plays {:?} and gets a score of {}",
                         m.expect("First move should never lose"),
@@ -45,10 +46,18 @@ fn main() {
                 results
             });
         println!("Scores: {:?}", scores);
+    } else if &args[1] == "--all-full" {
+        let mut boards = Board::all_boards();
+        let tree_sizes = boards
+            .par_iter_mut()
+            .tqdm()
+            .map(|b| *traverse_game_tree(b, &mut 0))
+            .sum::<u64>();
+        println!("{} games considered in total", tree_sizes);
     } else if &args[1] == "--full" {
         let mut counter = 0;
         traverse_game_tree(&mut board, &mut counter);
-        println!("{} games tried", counter);
+        println!("{} games considered", counter);
     } else if &args[1] == "--simulate" {
         simulate_game(&mut board);
     } else if &args[1] == "--solve" {
@@ -62,7 +71,7 @@ fn main() {
             _ => eprintln!("Something went wrong"),
         };
     } else {
-        println!("Options: --all --solve --simulate --full");
+        println!("Specify an option");
     }
 }
 
@@ -93,19 +102,17 @@ fn simulate_game(board: &mut Board) {
     }
 }
 
-fn traverse_game_tree(board: &mut Board, counter: &mut u64) {
+fn traverse_game_tree<'a>(board: &mut Board, counter: &'a mut u64) -> &'a mut u64 {
     let moves = board.legal_moves(); //.into_iter().sorted().collect();
     if moves.is_empty() {
         *counter += 1;
-        if *counter % 100000 == 0 {
-            println!("{}", counter);
-        }
     }
     for m in moves {
         board.make_move(m);
         traverse_game_tree(board, counter);
         board.undo_move();
     }
+    counter
 }
 
 struct Board {
