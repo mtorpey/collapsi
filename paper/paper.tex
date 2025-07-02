@@ -1,15 +1,29 @@
 \documentclass[a4paper, twocolumn]{article}
 
 \usepackage{amsmath}
+\usepackage{draftwatermark}
 \usepackage{fullpage}
 \usepackage[hidelinks]{hyperref}
 \usepackage[UKenglish]{isodate}
+\usepackage{pgf-pie}
 \usepackage{tcolorbox}
 \usepackage{url}
 
-\tcbset{height=0.9cm, width=0.8cm, valign=center, halign=center, left=0cm, right=0cm}
 \setlength{\tabcolsep}{0.1cm}
+\tcbset{height=0.9cm, width=0.8cm, valign=center, halign=center, left=0cm, right=0cm}
 \newcommand\card[1]{\begin{tcolorbox}#1\end{tcolorbox}}
+
+\newcommand\board[8]{
+  \begin{tabular}{c c c c}
+    \card{#1} & \card{#2} & \card{#3} & \card{#4} \\
+    \card{#5} & \card{#6} & \card{#7} & \card{#8} \\
+    \restofboard
+}
+\newcommand\restofboard[8]{
+    \card{#1} & \card{#2} & \card{#3} & \card{#4} \\
+    \card{#5} & \card{#6} & \card{#7} & \card{#8}
+  \end{tabular}
+}
 
 \title{Collapsi is strongly solved}
 \author{Michael Young\\University of St Andrews}
@@ -43,26 +57,19 @@ grid, an example layout being shown in Figure \ref{fig:board}. Each player takes
 a pawn (red or blue) and places it on a joker, then players take turns
 (\textit{plies}) to move with red going first.
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
-  \begin{tabular}{c c c c}
-    \card{A} & \card{2} & \card{2} & \card{3} \\
-    \card{4} & \card{A} & \card{2} & \card{J} \\
-    \card{3} & \card{A} & \card{2} & \card{3} \\
-    \card{J} & \card{3} & \card{A} & \card{4}
-  \end{tabular}
-
+  \board A223 4A2J 3A23 J3A4
   \caption{Example Collapsi board layout}
   \label{fig:board}
 \end{figure}
 
 On a player's first turn they may choose to move 1, 2, 3 or 4 spaces; on
 subsequent turns they must move exactly the number of spaces shown on the card
-they begin from, with ace representing 1.  (TODO: change of rule for jokers?)
-Moving is done orthogonally and the grid is torroidal so that the top edge is
-joined to the bottom, and the left to the right. On a given move, a pawn may not
-enter a given space twice, and may not end its movement on the space occupied by
-the opponent's pawn.
+they begin from, with ace representing 1. Moving is done orthogonally and the
+grid is torroidal so that the top edge is joined to the bottom, and the left to
+the right. On a given move, a pawn may not enter a given space twice, and may
+not end its movement on the space occupied by the opponent's pawn.
 
 After a player's ply, the card they began from is turned face down and cannot
 be entered for the rest of the game. The first player who cannot make a legal
@@ -71,7 +78,15 @@ move loses the game, which must therefore happen in at most 14 plies.
 
 \section{Game length}
 
+In analysing games, besides just considering which player has a winning
+strategy, it is common to evaluate how many moves are required to complete the
+game assuming perfect play on both sides, as when computing endgame tablebases
+such as those for chess \cite{endgame}.
 
+For Collapsi we consider strategy where the winning player attempts to win in as
+few plies as possible, and the losing player attempts to prolong the game,
+ideally to the maximum game length of 14 plies. We refer to this as
+\textit{game-length-perfect play}.
 
 
 \section{Search space}
@@ -102,15 +117,13 @@ Figure~\ref{fig:joker-distances}, with one representative of each distance
 highlighted: these 5 positions are the positions considered for the second joker
 when searching.
 
-\begin{figure}[h]
+\begin{figure}[ht]
   \centering
-  \begin{tabular}{c c c c}
-    \card{J} & \card{\textbf{0,1}} & \card{\textbf{0,2}} & \card{0,1} \\
-    \card{0,1} & \card{\textbf{1,1}} & \card{\textbf{1,2}} & \card{1,1} \\
-    \card{0,2} & \card{1,2} & \card{\textbf{2,2}} & \card{1,2} \\
-    \card{0,1} & \card{1,1} & \card{1,2} & \card{1,1}
-  \end{tabular}
-
+  \board
+  {J}   {\textbf{0,1}} {\textbf{0,2}} {0,1}
+  {0,1} {\textbf{1,1}} {\textbf{1,2}} {1,1}
+  {0,2} {1,2}          {\textbf{2,2}} {1,2}
+  {0,1} {1,1}          {1,2}          {1,1}
   \caption{Distances of spaces from top-left joker}
   \label{fig:joker-distances}
 \end{figure}
@@ -146,17 +159,19 @@ of a database of game positions, since the results can be computed on demand for
 most relevant applications.
 
 The result with game-length perfect play was determined for all deals in a
-search that took 7 hours and 29 minutes using 20 cores. All results can be
+search that took 7 hours and 30 minutes using 20 cores. All results can be
 reproduced by following the instructions provided in the library's readme file
 \cite{github}.
 
 
 \section{Results}
 
-The length of games given game-length-perfect play from both sides is shown in
-Table~\ref{tab:game-length}.
 
-\begin{table}[h]
+The length of games given game-length-perfect play from both sides is shown in
+Table~\ref{tab:game-length}. Since red plays first, red wins games with an odd
+number of plies and blue wins games win an even number of plies.
+
+\begin{table}[ht]
   \centering
   \begin{tabular}{r r r c}
     \hline
@@ -177,6 +192,37 @@ Table~\ref{tab:game-length}.
   \label{tab:game-length}
 \end{table}
 
+A win can never be forced in as few as 6 plies, and there are only 8 positions
+in which red can force a win in the minimum 7 plies, of which one is shown in
+Figure~\ref{fig:win-in-7}.
+
+\begin{figure}[ht]
+  \centering
+  \board JA2A 3JA4 2323 34A2
+  \caption{Red can win in 7 plies}
+  \label{fig:win-in-7}
+\end{figure}
+
+Overall, 5~954~934 deals are a winning position for red, with the remaining
+9~810~816 a winning position for blue, a considerable advantage for the second
+player, as shown in Figure~\ref{fig:win-chance}.
+
+\begin{figure}[ht]
+  \centering
+  \begin{tikzpicture}
+    \pie[
+    radius=2,
+    color={white, white},
+    rotate=90,
+    text=pin
+    ]{
+      37.8/Red,
+      62.2/Blue
+    }
+  \end{tikzpicture}
+  \caption{Deals won by each player}
+  \label{fig:win-chance}
+\end{figure}
 
 
 \section{Future work}
@@ -194,10 +240,16 @@ analysis to improve their play, especially in the early game where it can be
 difficult to understand the value of a move.
 
 
+\section{Acknowledgements}
+
+Thanks to Ian Gent for guidance and proofreading (TODO?), and to Ben Claydon for
+some valuable tips on data processing in Rust.
+
+
 \begin{thebibliography}{9}
 
 \bibitem{rules}
-  Mark~S.~Ball,
+  M.~S.~Ball,
   \textit{Collapsi 1.1.0},
   \url{https://boardgamegeek.com/filepage/301918/collapsi-official-rules}
   %\url{https://docs.google.com/document/d/1MV1vvV1Aq7ikRU7lF8Y7QQD-akH3ybHmk2fKs6p61lE}
@@ -209,6 +261,12 @@ difficult to understand the value of a move.
   YouTube video,
   \url{https://youtu.be/6vYEHdjlw3g}
   (Accessed 2025-06-30).
+
+\bibitem{endgame}
+  G.~Haworth,
+  \textit{Chess Endgame News: 7-man `Syzygy' $DTZ_{50}''$ EGTs},
+  ICGA Journal. 40(4):372--373 (2019),
+  doi:10.3233/ICG-190087
 
 \bibitem{github}
   M.~Young,
