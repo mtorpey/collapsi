@@ -9,17 +9,30 @@
 \usepackage{tcolorbox}
 \usepackage{url}
 
-\setlength{\tabcolsep}{0.1cm}
-\tcbset{height=0.9cm, width=0.8cm, valign=center, halign=center, left=0cm, right=0cm}
+\tcbset{height=0.9cm, width=0.8cm, valign=center, halign=center, left=0cm, right=0cm, colback=white}
 \newcommand\card[1]{\begin{tcolorbox}#1\end{tcolorbox}}
+\newcommand\emphcard[1]{\begin{tcolorbox}[colback=red!30]#1\end{tcolorbox}}
 
+\newcommand\customboard[8]{
+  \setlength{\tabcolsep}{0.1cm}
+  \begin{tabular}{c c c c}
+    #1 & #2 & #3 & #4 \\
+    #5 & #6 & #7 & #8 \\
+    \customboardmore
+}
+\newcommand\customboardmore[8]{
+    #1 & #2 & #3 & #4 \\
+    #5 & #6 & #7 & #8
+  \end{tabular}
+}
 \newcommand\board[8]{
+  \setlength{\tabcolsep}{0.1cm}
   \begin{tabular}{c c c c}
     \card{#1} & \card{#2} & \card{#3} & \card{#4} \\
     \card{#5} & \card{#6} & \card{#7} & \card{#8} \\
-    \restofboard
+    \boardmore
 }
-\newcommand\restofboard[8]{
+\newcommand\boardmore[8]{
     \card{#1} & \card{#2} & \card{#3} & \card{#4} \\
     \card{#5} & \card{#6} & \card{#7} & \card{#8}
   \end{tabular}
@@ -39,18 +52,18 @@
   ending when a player has no legal moves.
 
   The number of possible deals after symmetry breaking is low enough, and the
-  game tree is shallow enough, to make an exhaustive analysis of the game
+  game tree shallow enough, to make an exhaustive analysis of the game
   feasible. A search was applied revealing that the first player can force a win
   in 37.8\% of deals, with the second player able forcing a win in all others. In
   6.3\% of deals the losing player can prolong the game to the maximum length of
-  14 plies, and a win can never be forced in less than 7 plies.
+  14 plies, and a win can never be forced in fewer than 7 plies.
 }
 
 
 \section{The game}
 
-The rules for Collapsi are hosted by the designer in a living document
-\cite{rules} and in the game's introductory YouTube video \cite{youtube}. The
+The rules for Collapsi are hosted by the designer in an online document
+\cite{rules} and in the game's introductory video \cite{youtube}. The
 board is a set of 16 playing cards taken from a standard deck -- four aces, four
 2s, four 3s, two 4s and two jokers -- shuffled and arranged into a $4\times 4$
 grid, an example layout being shown in Figure \ref{fig:board}. Each player takes
@@ -75,6 +88,8 @@ After a player's ply, the card they began from is turned face down and cannot
 be entered for the rest of the game. The first player who cannot make a legal
 move loses the game, which must therefore happen in at most 14 plies.
 
+This study considers which player wins in various layouts given perfect play.
+
 
 \section{Game length}
 
@@ -83,47 +98,50 @@ strategy, it is common to evaluate how many moves are required to complete the
 game assuming perfect play on both sides, as when computing endgame tablebases
 such as those for chess \cite{endgame}.
 
-For Collapsi we consider strategy where the winning player attempts to win in as
-few plies as possible, and the losing player attempts to prolong the game,
-ideally to the maximum game length of 14 plies. We refer to this as
-\textit{game-length-perfect play}.
+For Collapsi we consider play where the winning player attempts to win in as few
+plies as possible, and the losing player attempts to prolong the game, ideally
+to the maximum game length of 14 plies. We refer to this as
+\textit{game-length-perfect play}. We can evaluate an end-of-game position to
+the number of cards remaining face-up if red wins, and the negative of this
+number if blue wins -- this is a function that the red player is trying to
+maximise, and the blue player is trying to minimise.
 
 
 \section{Search space}
 
 To find a solution, all possible arrangements of the 16 cards must be
 considered, naively a space of $16! = 2.1 \times 10^{13}$ possible
-arrangements. However, various symmetries allow us to reduce the search space by
-eliminating deals that are strategically equivalent, resulting in a tractable
+arrangements. However, various symmetries allow us to reduce this search space by
+eliminating deals that are strategically equivalent, resulting in a more tractable
 number of deals that need to be considered.
 
 First observe that suit plays no part in the game: all 3s are equivalent, and so
-on. Note also that a player's start position has no effect, since a move of 1--4
+on. Note also that a player's start position has no effect, since a move of 1. 2. 3 or 4
 allows them to reach any uncovered space on their first ply; this means the two
 jokers can be considered equivalent.
 
 The torroidal nature of the board means that the bottom row can be moved to the
 top, or the right column moved to the left edge, without materially affecting
 play. Each of these operations can be cycled, so that any row can be chosen as
-the top one and any column as the left one. We model this by only considering
+the top one and any column as the left one. We exploit this by only considering
 boards with a joker in the top-left corner, without loss of generality.
 
 We can also constrain the position of the second joker without loss of
 generality, to take advantage of reflections in the board. Two possible
-positions for the second joker are strategically equivalent if the $(x, y)$
-distance between the first joker and the second is the same in both cases,
-possibly including an $x$--$y$ swap. The possible distances are shown in
+positions for the second joker are strategically equivalent if they have the same $(x, y)$
+distance between the first joker and the second,
+possibly including an $x$--$y$ swap (diagonal reflection). The possible distances are shown in
 Figure~\ref{fig:joker-distances}, with one representative of each distance
 highlighted: these 5 positions are the positions considered for the second joker
 when searching.
 
 \begin{figure}[ht]
   \centering
-  \board
-  {J}   {\textbf{0,1}} {\textbf{0,2}} {0,1}
-  {0,1} {\textbf{1,1}} {\textbf{1,2}} {1,1}
-  {0,2} {1,2}          {\textbf{2,2}} {1,2}
-  {0,1} {1,1}          {1,2}          {1,1}
+  \customboard
+  {\card{J}} {\emphcard{0,1}} {\emphcard{0,2}} {\card{0,1}}
+  {\card{0,1}} {\emphcard{1,1}} {\emphcard{1,2}} {\card{1,1}}
+  {\card{0,2}} {\card{1,2}} {\emphcard{2,2}} {\card{1,2}}
+  {\card{0,1}} {\card{1,1}} {\card{1,2}} {\card{1,1}}
   \caption{Distances of spaces from top-left joker}
   \label{fig:joker-distances}
 \end{figure}
@@ -135,7 +153,7 @@ $$5~\binom{14}{4} \binom{10}{4} \binom{6}{4} = 15~765~750,$$
 a number much more amenable to search than the naive space initially considered.
 
 Different deals have game trees of different sizes, but informal experiments
-show that around 900,000 possible games can be played from a typical deal.
+show that around 900~000 possible games can be played from a typical deal.
 
 
 \section{Computation}
@@ -147,13 +165,13 @@ then explored in parallel.
 
 The algorithm used for evaluating game positions was minimax search with
 alpha--beta pruning and unlimited depth. This was applied both for the simple
-goal of finding a winning move, and for the stricter goal of maximising score
+goal of finding a winning move, and for the stricter goal of optimising score
 with respect to game length.
 
 Given a new board, it can be determined whether the current player is in a
 winning position, and if so a winning move can be determined, in around 12
-milliseconds. To find a move that maximises the current player's score with
-respect to turn length takes slightly longer, around 18 milliseconds. These very
+milliseconds. To find a game-length-perfect move takes slightly longer, around
+18 milliseconds. These very
 short computation times suggest that there would be little value in the creation
 of a database of game positions, since the results can be computed on demand for
 most relevant applications.
@@ -175,17 +193,17 @@ number of plies and blue wins games win an even number of plies.
   \centering
   \begin{tabular}{r r r c}
     \hline
-    Plies & Deals & (\%) & Winner \\
+    \textbf{Plies} & \textbf{Deals} & \textbf{(\%)} \\
     \hline
-    $\leq 6$ & 0 & 0.0 & ---\\
-    7 & 8 & 0.0 & Red \\
-    8 & 62604 & 0.4 & Blue \\
-    9 & 30470 & 0.2 & Red \\
-    10 & 1156548 & 7.3 & Blue \\
-    11 & 1869785 & 11.9 & Red \\
-    12 & 7590554 & 48.1 & Blue \\
-    13 & 4054671 & 25.7 & Red \\
-    14 & 1001110 & 6.3 & Blue \\
+    $\leq 6$ & 0 & 0.0 \\
+    7 & 8 & 0.0 \\
+    8 & 62604 & 0.4 \\
+    9 & 30470 & 0.2 \\
+    10 & 1156548 & 7.3 \\
+    11 & 1869785 & 11.9 \\
+    12 & 7590554 & 48.1 \\
+    13 & 4054671 & 25.7 \\
+    14 & 1001110 & 6.3 \\
     \hline
   \end{tabular}
   \caption{Length of game with perfect play}
@@ -199,7 +217,7 @@ Figure~\ref{fig:win-in-7}.
 \begin{figure}[ht]
   \centering
   \board JA2A 3JA4 2323 34A2
-  \caption{Red can win in 7 plies}
+  \caption{A deal where red wins in 7 plies}
   \label{fig:win-in-7}
 \end{figure}
 
@@ -212,7 +230,7 @@ player, as shown in Figure~\ref{fig:win-chance}.
   \begin{tikzpicture}
     \pie[
     radius=2,
-    color={white, white},
+    color={red!30, blue!30},
     rotate=90,
     text=pin
     ]{
@@ -228,11 +246,11 @@ player, as shown in Figure~\ref{fig:win-chance}.
 \section{Future work}
 
 In late June 2025, Collapsi's designer offered an updated set of rules for the
-game, described as version 1.2.0, with minor modifications to the rules for
+game, described as version 1.2.0, with minor modifications to the rules for movement from
 jokers. The library should be expanded to allow for analysis of the new game,
 which may differ in its theoretical status.
 
-The game exploration was performed exhaustively without consideration for how
+The game exploration above was performed exhaustively without consideration for how
 this solution could inform human play. Now that a library exists and perfect
 moves can be retrieved easily, its moves should be considered qualitatively,
 since they might highlight strategies that players could follow without deep
@@ -242,7 +260,7 @@ difficult to understand the value of a move.
 
 \section{Acknowledgements}
 
-Thanks to Ian Gent for guidance and proofreading (TODO?), and to Ben Claydon for
+Thanks to Ian Gent for guidance and proofreading (todo?), and to Ben Claydon for
 some valuable tips on data processing in Rust.
 
 
