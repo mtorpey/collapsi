@@ -1,3 +1,8 @@
+// TODO:
+// - Tidy up
+// - Solve particular position as input
+// - Web interface with WASM
+
 use itertools::Itertools;
 use rayon::prelude::*;
 use simple_tqdm::ParTqdm;

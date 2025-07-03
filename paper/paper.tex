@@ -53,10 +53,12 @@
 
   The number of possible deals after symmetry breaking is low enough, and the
   game tree shallow enough, to make an exhaustive analysis of the game
-  feasible. A search was applied revealing that the first player can force a win
-  in 37.8\% of deals, with the second player able forcing a win in all others. In
-  6.3\% of deals the losing player can prolong the game to the maximum length of
-  14 plies, and a win can never be forced in fewer than 7 plies.
+  feasible. A solver was written that can find an optimal move for a given board
+  position in around 20 milliseconds. A search was applied revealing that the
+  first player can force a win in TODO\% of deals, with the second player able to
+  force a win in all others. In TODO\% of deals the losing player can prolong
+  the game to the maximum length of 14 plies; a win can never be forced in
+  fewer than 7 plies.
 }
 
 
@@ -77,7 +79,7 @@ a pawn (red or blue) and places it on a joker, then players take turns
   \label{fig:board}
 \end{figure}
 
-On a player's first turn they may choose to move 1, 2, 3 or 4 spaces; on
+On a player's first turn they are on a joker, and may choose to move 1, 2, 3 or 4 spaces; on
 subsequent turns they must move exactly the number of spaces shown on the card
 they begin from, with ace representing 1. Moving is done orthogonally and the
 grid is torroidal so that the top edge is joined to the bottom, and the left to
@@ -168,27 +170,30 @@ show that around 900~000 possible games can be played from a typical deal.
 
 \section{Computation}
 
-A Rust library for enumerating and exploring Collapsi games was written
-\cite{github} and exhaustive experiments performed using a 13th Gen Intel Core
-i5-13500 processor. All 15~765~750 deals can be enumerated in TODO seconds and
-then explored in parallel.
+A Rust library \cite{github} was written that can solve any given game position,
+and also enumerate all possible deals as described above. Exhaustive experiments
+were performed using a 13th Gen Intel Core i5-13500 processor. All 15~765~750
+deals can be enumerated in TODO seconds and then explored and solved in
+parallel.
 
 The algorithm used for evaluating game positions was minimax search with
 alpha--beta pruning and unlimited depth. This was applied both for the simple
 goal of finding a winning move, and for the stricter goal of optimising score
 with respect to game length.
 
-Given a particular board, it can be determined whether the current player is in a
-winning position, and if so a winning move can be determined, in around 12
+Given a particular board, it can be determined whether the current player is in
+a winning position, and if so a winning move can be determined, in around 12
 milliseconds. To find a game-length-perfect move takes slightly longer, around
-18 milliseconds. These very
-short computation times suggest that there would be little value in the creation
-of a database of game positions, since the results can be computed on demand for
-most relevant applications.
+18 milliseconds. This algorithm is applicable to any game state including those
+reached after suboptimal moves have been played, thus satisfying the definition
+of a \textit{strongly solved} game \cite{games-solved}. These very short
+computation times suggest that there would be little value in the creation of a
+database of game positions, since the results can be computed on demand for most
+relevant applications.
 
 The result with game-length-perfect play was determined for all deals in a
 search that took TODO hours and TODO minutes using 20 cores. All results can be
-reproduced by following the instructions provided in the library's readme file
+reproduced by following the instructions provided in the solver's readme file
 \cite{github}.
 
 
@@ -257,11 +262,11 @@ player, as shown in Figure~\ref{fig:win-chance}.
 
 In late June 2025, Collapsi's designer offered an updated set of rules for the
 game, described as version 1.2.0, with minor modifications to the rules for movement from
-jokers. The library should be expanded to allow for analysis of the new game,
+jokers. The solver should be expanded to allow for analysis of the new game,
 which may differ in its theoretical status.
 
 The game exploration above was performed exhaustively without consideration for how
-this solution could inform human play. Now that a library exists and perfect
+this solution could inform human play. Now that a solver exists and perfect
 moves can be retrieved easily, its moves should be considered qualitatively,
 since they might highlight strategies that players could follow without deep
 analysis to improve their play, especially in the early game where it can be
@@ -270,8 +275,8 @@ difficult to understand the value of a move.
 
 \section{Acknowledgements}
 
-The author extends his thanks to Ian Gent for guidance on the research and
-writing, and to Ben Claydon for some valuable tips on data processing in Rust.
+Thanks to Prof.~Ian Gent for his research suggestions and comments on an early
+version, and to Ben Claydon for some valuable tips on data processing in Rust.
 
 
 \begin{thebibliography}{9}
@@ -302,6 +307,12 @@ writing, and to Ben Claydon for some valuable tips on data processing in Rust.
   Rust crate,
   2025,
   \url{https://github.com/mtorpey/collapsi}
+
+\bibitem{games-solved}
+  H.~Jaap van den Herik, Jos W.~H.~M.~Uiterwijk, Jack~van~Rijswijck,
+  \textit{Games solved: Now and in the future},
+  Artificial Intelligence, 134(1--2):277--311 (2002),
+  doi:10.1016/S0004-3702(01)00152-7
 
 \end{thebibliography}
 
