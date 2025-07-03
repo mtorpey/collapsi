@@ -158,6 +158,9 @@ and the remaining 14 cards split into three sets of four with the two 4s left
 over, the number of deals that must be considered is equal to
 $$5~\binom{14}{4} \binom{10}{4} \binom{6}{4} = 15~765~750,$$
 a number much more amenable to search than the naive space initially considered.
+After weighting the second joker positions as described above, we can produce
+data for a total of 47~297~250 deals, which correspond proportionally to a
+uniformly random deal.
 
 Different deals have game trees of different sizes, but informal experiments
 show that around 900~000 possible games can be played from a typical deal.
@@ -167,7 +170,7 @@ show that around 900~000 possible games can be played from a typical deal.
 
 A Rust library for enumerating and exploring Collapsi games was written
 \cite{github} and exhaustive experiments performed using a 13th Gen Intel Core
-i5-13500 processor. All 15~765~750 deals can be enumerated in 3.3 seconds and
+i5-13500 processor. All 15~765~750 deals can be enumerated in TODO seconds and
 then explored in parallel.
 
 The algorithm used for evaluating game positions was minimax search with
@@ -175,7 +178,7 @@ alpha--beta pruning and unlimited depth. This was applied both for the simple
 goal of finding a winning move, and for the stricter goal of optimising score
 with respect to game length.
 
-Given a new board, it can be determined whether the current player is in a
+Given a particular board, it can be determined whether the current player is in a
 winning position, and if so a winning move can be determined, in around 12
 milliseconds. To find a game-length-perfect move takes slightly longer, around
 18 milliseconds. These very
@@ -184,7 +187,7 @@ of a database of game positions, since the results can be computed on demand for
 most relevant applications.
 
 The result with game-length-perfect play was determined for all deals in a
-search that took 7 hours and 30 minutes using 20 cores. All results can be
+search that took TODO hours and TODO minutes using 20 cores. All results can be
 reproduced by following the instructions provided in the library's readme file
 \cite{github}.
 
@@ -194,10 +197,6 @@ reproduced by following the instructions provided in the library's readme file
 The length of games given game-length-perfect play from both sides is shown in
 Table~\ref{tab:game-length}. Since red plays first, red wins games with an odd
 number of plies and blue with an even number of plies.
-
-The total number of deals shown is 47~297~250, since some second-joker positions
-need to be counted several times as described in Section~\ref{sec:search-space}
-in order to give results proportional to a uniformly random deal.
 
 \begin{table}[ht]
   \centering
@@ -216,11 +215,12 @@ in order to give results proportional to a uniformly random deal.
     14 & 1001110 & 6.3 \\
     \hline
   \end{tabular}
+  TODO NEW NUMBERS
   \caption{Length of game with perfect play}
   \label{tab:game-length}
 \end{table}
 
-A win can never be forced in as few as 6 plies, and there are only 8 positions
+A win can never be forced in as few as 6 plies, and there are only TODO positions
 in which red can force a win in the minimum 7 plies, of which one is shown in
 Figure~\ref{fig:win-in-7}.
 
@@ -231,8 +231,8 @@ Figure~\ref{fig:win-in-7}.
   \label{fig:win-in-7}
 \end{figure}
 
-Overall, 5~954~934 deals are a winning position for red, with the remaining
-9~810~816 a winning position for blue, a considerable advantage for the second
+Overall, TODO deals are a winning position for red, with the remaining
+TODO a winning position for blue, a considerable advantage for the second
 player, as shown in Figure~\ref{fig:win-chance}.
 
 \begin{figure}[ht]
@@ -244,8 +244,8 @@ player, as shown in Figure~\ref{fig:win-chance}.
     rotate=90,
     text=pin
     ]{
-      37.8/Red,
-      62.2/Blue
+      TODO/Red,
+      TODO/Blue
     }
   \end{tikzpicture}
   \caption{Deals won by each player}
@@ -270,8 +270,8 @@ difficult to understand the value of a move.
 
 \section{Acknowledgements}
 
-Thanks to Ian Gent for guidance and proofreading (todo?), and to Ben Claydon for
-some valuable tips on data processing in Rust.
+The author extends his thanks to Ian Gent for guidance on the research and
+writing, and to Ben Claydon for some valuable tips on data processing in Rust.
 
 
 \begin{thebibliography}{9}
@@ -298,10 +298,10 @@ some valuable tips on data processing in Rust.
 
 \bibitem{github}
   M.~Young,
-  \textit{collapsi-solver},
+  Collapsi solver,
   Rust crate,
   2025,
-  \url{https://github.com/mtorpey/collapsi-solver}
+  \url{https://github.com/mtorpey/collapsi}
 
 \end{thebibliography}
 
