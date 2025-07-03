@@ -108,6 +108,7 @@ maximise, and the blue player is trying to minimise.
 
 
 \section{Search space}
+\label{sec:search-space}
 
 To find a solution, all possible arrangements of the 16 cards must be
 considered, naively a space of $16! = 2.1 \times 10^{13}$ possible
@@ -127,8 +128,8 @@ the top one and any column as the left one. We exploit this by only considering
 boards with a joker in the top-left corner, without loss of generality.
 
 We can also constrain the position of the second joker without loss of
-generality, to take advantage of reflections in the board. Two possible
-positions for the second joker are strategically equivalent if they have the same $(x, y)$
+generality, to take advantage of reflections in the board. There are 15 possible positions for the second joker, but two
+such positions are strategically equivalent if they have the same $(x, y)$
 distance between the first joker and the second,
 possibly including an $x$--$y$ swap (diagonal reflection). The possible distances are shown in
 Figure~\ref{fig:joker-distances}, with one representative of each distance
@@ -145,6 +146,12 @@ when searching.
   \caption{Distances of spaces from top-left joker}
   \label{fig:joker-distances}
 \end{figure}
+
+Though these 5 positions cover all possible deals, they are not equally
+likely. As Figure~\ref{fig:joker-distances} shows, of the 15 positions for the
+second joker: $(0,1)$, $(1,1)$ and $(1,2)$ represent four each; $(0,2)$
+represents two; and $(2,2)$ represents only one. Analysis of statistics for all
+possible deals should therefore weight these positions accordingly.
 
 Overall, with the position of one joker fixed, 5 options for the second joker,
 and the remaining 14 cards split into three sets of four with the two 4s left
@@ -184,10 +191,13 @@ reproduced by following the instructions provided in the library's readme file
 
 \section{Results}
 
-
 The length of games given game-length-perfect play from both sides is shown in
 Table~\ref{tab:game-length}. Since red plays first, red wins games with an odd
 number of plies and blue with an even number of plies.
+
+The total number of deals shown is 47~297~250, since some second-joker positions
+need to be counted several times as described in Section~\ref{sec:search-space}
+in order to give results proportional to a uniformly random deal.
 
 \begin{table}[ht]
   \centering
