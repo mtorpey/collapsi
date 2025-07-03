@@ -19,30 +19,30 @@ fn main() {
         let red_wins = Board::all_boards()
             .par_iter_mut()
             .tqdm()
-            .map(Board::winning_move)
-            .map(|r| if r.is_some() { 1 } else { 0 })
-            .sum::<usize>();
+            .map(|(board, weight)| (board.winning_move(), weight))
+            .map(|(m, weight)| if m.is_some() { *weight } else { 0 })
+            .sum::<u64>();
         println!("R wins {} total", red_wins);
     } else if &args[1] == "--all-length" {
         let scores = Board::all_boards()
             .par_iter_mut()
             .tqdm()
-            .map(|b| (b.best_move_by_cards_remaining(), b))
-            .map(|((m, score), b)| {
+            .map(|(board, weight)| (board.best_move_by_cards_remaining(), board, weight))
+            .map(|((m, score), board, weight)| {
                 if score.unsigned_abs() > 8 {
-                    b.print();
+                    board.print();
                     println!(
                         "R plays {:?} and gets a score of {}",
                         m.expect("First move should never lose"),
                         score
                     );
                 }
-                score
+                (score, *weight)
             })
-            .collect::<Vec<i8>>()
+            .collect::<Vec<(i8, u64)>>()
             .into_iter()
-            .fold([0; 16], |mut results, score| {
-                results[score.unsigned_abs() as usize] += 1;
+            .fold([0; 16], |mut results, (score, weight)| {
+                results[score.unsigned_abs() as usize] += weight;
                 results
             });
         println!("Scores: {:?}", scores);
@@ -51,7 +51,7 @@ fn main() {
         let tree_sizes = boards
             .par_iter_mut()
             .tqdm()
-            .map(|b| *traverse_game_tree(b, &mut 0))
+            .map(|(board, weight)| *traverse_game_tree(board, &mut 0) * *weight)
             .sum::<u64>();
         println!("{} games considered in total", tree_sizes);
     } else if &args[1] == "--full" {
@@ -137,16 +137,16 @@ impl Board {
         }
     }
 
-    fn all_boards() -> Vec<Board> {
+    fn all_boards() -> Vec<(Board, u64)> {
         let mut boards = vec![];
-        for pawn2 in [1, 2, 5, 6, 10] {
+        for (pawn2, weight) in [(1, 4), (2, 2), (5, 4), (6, 4), (10, 1)] {
             for perm in unique_permutations(vec![], &[0, 4, 4, 4, 2]) {
                 let mut cards = vec![0];
                 cards.extend_from_slice(&perm[..pawn2 - 1]);
                 cards.push(0);
                 cards.extend_from_slice(&perm[pawn2 - 1..]);
                 //println!("{:?}", cards);
-                boards.push(Board {
+                boards.push((Board {
                     cards: [
                         cards[0..4].try_into().unwrap(),
                         cards[4..8].try_into().unwrap(),
@@ -156,13 +156,10 @@ impl Board {
                     pawns: [Point(0, 0), Point(pawn2 / 4, pawn2 % 4)],
                     turn: 0,
                     moves: vec![],
-                });
-                if boards.len() % 1000000 == 0 {
-                    println!("{}", boards.len());
-                }
+                }, weight));
             }
         }
-        println!("{}", boards.len());
+        println!("Considering {} boards representing {} deals", boards.len(), boards.iter().map(|(_b, w)| w).sum::<u64>());
         boards
     }
 
