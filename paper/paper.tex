@@ -1,7 +1,6 @@
 \documentclass[a4paper, twocolumn]{article}
 
 \usepackage{amsmath}
-\usepackage{draftwatermark}
 \usepackage{fullpage}
 \usepackage[hidelinks]{hyperref}
 \usepackage[UKenglish]{isodate}
@@ -47,7 +46,7 @@
 
 \abstract{ Collapsi is a two-player game of complete information released in
   June 2025 by Mark~S.~Ball of \emph{Riffle Shuffle \& Roll}. Played with two
-  pawns on a torroidal board of 16 randomly mixed playing cards, players take it
+  pawns on a toroidal board of 16 randomly mixed playing cards, players take it
   in turns to move based on the value of the card they sit on, with the game
   ending when a player has no legal moves.
 
@@ -82,7 +81,7 @@ a pawn (red or blue) and places it on a joker, then players take turns
 On a player's first turn they are on a joker, and may choose to move 1, 2, 3 or 4 spaces; on
 subsequent turns they must move exactly the number of spaces shown on the card
 they begin from, with ace representing 1. Moving is done orthogonally and the
-grid is torroidal so that the top edge is joined to the bottom, and the left to
+grid is toroidal so that the top edge is joined to the bottom, and the left to
 the right. On a given move, a pawn may not enter a given space twice, and may
 not end its movement on the space occupied by the opponent's pawn.
 
@@ -123,7 +122,7 @@ on. Note also that a player's start position has no effect, since a move of 1, 2
 allows them to reach any uncovered space on their first ply; this means the two
 jokers can be considered equivalent.
 
-The torroidal nature of the board means that the bottom row can be moved to the
+The toroidal nature of the board means that the bottom row can be moved to the
 top, or the right column moved to the left edge, without materially affecting
 play. Each of these operations can be repeated, so that any row can be chosen as
 the top one and any column as the left one. We exploit this by only considering
@@ -308,7 +307,7 @@ version, and to Ben Claydon for some valuable tips on data processing in Rust.
   M.~Young.
   Collapsi solver.
   Rust crate,
-  \textit{Github},
+  \textit{GitHub},
   \url{https://github.com/mtorpey/collapsi},
   2025.
 
