@@ -64,7 +64,7 @@
 
 \section{The game}
 
-The rules for Collapsi are hosted by the designer in an online document
+The rules for Collapsi are provided by the designer in an online document
 \cite{rules} and in the game's introductory video \cite{youtube}. The
 board is a set of 16 playing cards taken from a standard deck -- four aces, four
 2s, four 3s, two 4s and two jokers -- shuffled and arranged into a $4\times 4$
@@ -88,7 +88,7 @@ not end its movement on the space occupied by the opponent's pawn.
 
 After a player's ply, the card they began from is turned face down and cannot
 be entered for the rest of the game. The first player who cannot make a legal
-move loses the game, which must therefore happen in at most 14 plies.
+move loses the game, which can therefore last at most 14 plies.
 
 This study considers which player wins in various layouts given perfect play.
 
@@ -96,8 +96,8 @@ This study considers which player wins in various layouts given perfect play.
 \section{Game length}
 
 In analysing games, besides just considering which player has a winning
-strategy, it is common to evaluate how many moves are required to complete the
-game assuming perfect play on both sides, as when computing endgame tablebases
+strategy, it is common to evaluate how many plies a
+game lasts assuming perfect play on both sides, as when computing endgame tablebases
 such as those for chess \cite{endgame}.
 
 For Collapsi we consider play where the winning player attempts to win in as few
@@ -113,19 +113,19 @@ maximise, and the blue player is trying to minimise.
 \label{sec:search-space}
 
 To find a solution, all possible arrangements of the 16 cards must be
-considered, naively a space of $16! = 2.1 \times 10^{13}$ possible
+considered, naively a space of $16! = 2.1 \times 10^{13}$
 arrangements. However, various symmetries allow us to reduce this search space by
-eliminating deals that are strategically equivalent, resulting in a more tractable
+eliminating deals that are strategically equivalent to others, resulting in a more tractable
 number of deals that need to be considered.
 
 First observe that suit plays no part in the game: all 3s are equivalent, and so
-on. Note also that a player's start position has no effect, since a move of 1. 2. 3 or 4
+on. Note also that a player's start position has no effect, since a move of 1, 2, 3 or 4
 allows them to reach any uncovered space on their first ply; this means the two
 jokers can be considered equivalent.
 
 The torroidal nature of the board means that the bottom row can be moved to the
 top, or the right column moved to the left edge, without materially affecting
-play. Each of these operations can be cycled, so that any row can be chosen as
+play. Each of these operations can be repeated, so that any row can be chosen as
 the top one and any column as the left one. We exploit this by only considering
 boards with a joker in the top-left corner, without loss of generality.
 
@@ -224,7 +224,7 @@ number of plies and blue with an even number of plies.
   \label{tab:game-length}
 \end{table}
 
-A win can never be forced in as few as 6 plies, and there are only 24 positions
+A win can never be forced in as few as 6 plies, and there are only 24 deals
 (8 up to symmetry) in which red can force a win in the minimum 7 plies, of which
 one is shown in Figure~\ref{fig:win-in-7}.
 
@@ -285,7 +285,8 @@ version, and to Ben Claydon for some valuable tips on data processing in Rust.
   Collapsi 1.1.0.
   Game rules,
   \textit{BoardGameGeek},
-  \url{https://boardgamegeek.com/filepage/301918/collapsi-official-rules},
+  \url{https://bgg.cc/filepage/301918},
+  %\url{https://boardgamegeek.com/filepage/301918/collapsi-official-rules},
   %\url{https://docs.google.com/document/d/1MV1vvV1Aq7ikRU7lF8Y7QQD-akH3ybHmk2fKs6p61lE}
   2025.
 
