@@ -55,8 +55,8 @@
   game tree shallow enough, to make an exhaustive analysis of the game
   feasible. A solver was written that can find an optimal move for a given board
   position in around 20 milliseconds. A search was applied revealing that the
-  first player can force a win in TODO\% of deals, with the second player able to
-  force a win in all others. In TODO\% of deals the losing player can prolong
+  first player can force a win in 37.5\% of deals, with the second player able to
+  force a win in all others. In 6.4\% of deals the losing player can prolong
   the game to the maximum length of 14 plies; a win can never be forced in
   fewer than 7 plies.
 }
@@ -173,7 +173,7 @@ show that around 900~000 possible games can be played from a typical deal.
 A Rust library \cite{github} was written that can solve any given game position,
 and also enumerate all possible deals as described above. Exhaustive experiments
 were performed using a 13th Gen Intel Core i5-13500 processor. All 15~765~750
-deals can be enumerated in TODO seconds and then explored and solved in
+deals can be enumerated in 3.3 seconds and then explored and solved in
 parallel.
 
 The algorithm used for evaluating game positions was minimax search with
@@ -192,7 +192,7 @@ database of game positions, since the results can be computed on demand for most
 relevant applications.
 
 The result with game-length-perfect play was determined for all deals in a
-search that took TODO hours and TODO minutes using 20 cores. All results can be
+search that took 7 hours and 29 minutes using 20 cores. All results can be
 reproduced by following the instructions provided in the solver's readme file
 \cite{github}.
 
@@ -210,22 +210,21 @@ number of plies and blue with an even number of plies.
     \textbf{Plies} & \textbf{Deals} & \textbf{(\%)} \\
     \hline
     $\leq 6$ & 0 & 0.0 \\
-    7 & 8 & 0.0 \\
-    8 & 62604 & 0.4 \\
-    9 & 30470 & 0.2 \\
-    10 & 1156548 & 7.3 \\
-    11 & 1869785 & 11.9 \\
-    12 & 7590554 & 48.1 \\
-    13 & 4054671 & 25.7 \\
-    14 & 1001110 & 6.3 \\
+    7 & 24 & 0.0 \\
+    8 & 142686 & 0.3 \\
+    9 & 87936 & 0.2 \\
+    10 & 3238032 & 6.8 \\
+    11 & 5505996 & 11.6 \\
+    12 & 23147802 & 48.9 \\
+    13 & 12127044 & 25.6 \\
+    14 & 3047730 & 6.4 \\
     \hline
   \end{tabular}
-  TODO NEW NUMBERS
   \caption{Length of game with perfect play}
   \label{tab:game-length}
 \end{table}
 
-A win can never be forced in as few as 6 plies, and there are only TODO positions
+A win can never be forced in as few as 6 plies, and there are only 24 positions
 in which red can force a win in the minimum 7 plies, of which one is shown in
 Figure~\ref{fig:win-in-7}.
 
@@ -236,8 +235,8 @@ Figure~\ref{fig:win-in-7}.
   \label{fig:win-in-7}
 \end{figure}
 
-Overall, TODO deals are a winning position for red, with the remaining
-TODO a winning position for blue, a considerable advantage for the second
+Overall, 17721000 deals (37.5\%) are a winning position for red, with the remaining
+29576250 (62.5\%) a winning position for blue, a considerable advantage for the second
 player, as shown in Figure~\ref{fig:win-chance}.
 
 \begin{figure}[ht]
@@ -249,8 +248,8 @@ player, as shown in Figure~\ref{fig:win-chance}.
     rotate=90,
     text=pin
     ]{
-      TODO/Red,
-      TODO/Blue
+      37.5/Red,
+      62.5/Blue
     }
   \end{tikzpicture}
   \caption{Deals won by each player}
