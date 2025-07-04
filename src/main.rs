@@ -13,13 +13,14 @@ use std::env;
 use std::ops::Add;
 
 const SIZE: usize = 4;
+const USAGE: &str = "Specify one of the following options: --full --solve --solve-length --simulate --all --all-length --all-full";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
     let mut board = Board::new();
 
     if args.len() <= 1 {
-        println!("Specify an option");
+        println!("{}", USAGE);
     } else if &args[1] == "--all" {
         let red_wins = Board::all_boards()
             .par_iter_mut()
@@ -76,7 +77,7 @@ fn main() {
             _ => eprintln!("Something went wrong"),
         };
     } else {
-        println!("Specify an option");
+        println!("{}", USAGE);
     }
 }
 
