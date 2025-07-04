@@ -1,2 +1,7 @@
 /target
-/paper/out/
+/paper/*.aux
+/paper/*.bbl
+/paper/*.blg
+/paper/*.log
+/paper/*.out
+/paper/*.pdf
