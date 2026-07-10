@@ -278,7 +278,9 @@ impl Board {
         let mut moves = self.reachable(origin, dist, &mut vec![]);
 
         // Cannot move onto the opponent's piece
-        self.pawns.map(|p| moves.remove(&p));
+        for p in self.pawns {
+            moves.remove(&p);
+        }
 
         moves
     }
