@@ -121,14 +121,25 @@ fn traverse_game_tree<'a>(board: &mut Board, counter: &'a mut u64) -> &'a mut u6
     counter
 }
 
+/// A complete description of the current gamestate
 struct Board {
+    /// The values of the cards, with 0 for a flipped card or joker
     cards: [[u8; SIZE]; SIZE],
+
+    /// The coordinates of the two pawns, red and blue
     pawns: [Point; 2],
+
+    /// The number of plies that have been made so far
     turn: usize,
-    moves: Vec<(u8, Point)>, // move n spaces from point p
+
+    /// The history of the game so far, as a list of moves
+    ///
+    /// A move is a tuple (n, p): moved n spaces starting at point p.
+    moves: Vec<(u8, Point)>,
 }
 
 impl Board {
+    /// An example start position
     fn new() -> Board {
         Board {
             cards: [
@@ -143,6 +154,15 @@ impl Board {
         }
     }
 
+    /// All possible boards up to symmetry, with their likelihoods
+    ///
+    /// This creates a set of representative boards such that any possible
+    /// starting board is strategically equivalent to exactly one board in the
+    /// set. Any board can be transformed into one of these boards via
+    /// reflection, rotation, or toroidal cycling of rows and columns.
+    ///
+    /// Some boards in the set represent more possible boards than others. Each
+    /// board is therefore associated with a relative likelihood value.
     fn all_boards() -> Vec<(Board, u64)> {
         let mut boards = vec![];
         for (pawn2, weight) in [(1, 4), (2, 2), (5, 4), (6, 4), (10, 1)] {
@@ -169,11 +189,13 @@ impl Board {
         boards
     }
 
+    /// The value of the card on the given point
     fn card(&self, point: Point) -> u8 {
         let Point(x, y) = point;
         self.cards[x][y]
     }
 
+    /// A winning move from this board state, or None if the position is losing
     fn winning_move(&mut self) -> Option<Point> {
         for m in self.legal_moves() {
             self.make_move(m);
@@ -186,10 +208,18 @@ impl Board {
         None
     }
 
+    /// An optimal move in the sense of game-length-perfect play
+    ///
+    /// Return value is the point to which the current player should move (None
+    /// if no possible moves) together with the expected score.
     fn best_move_by_cards_remaining(&mut self) -> (Option<Point>, i8) {
         self.best_move_by_cards_remaining_bounded(-16, 16)
     }
 
+    /// An optimal move in the sense of game-length-perfect play, but guided by
+    /// "at least" and "at most" values (alpha and beta) to restrict the search.
+    ///
+    /// This is an implementation of minimax with alpha-beta pruning.
     fn best_move_by_cards_remaining_bounded(
         &mut self,
         mut at_least: i8,
@@ -244,6 +274,8 @@ impl Board {
         }
     }
 
+    /// Points reachable from `point` in `dist` squares, assuming we already
+    /// moved through everything in `visited`
     fn reachable(&self, point: Point, dist: u8, visited: &mut Vec<Point>) -> HashSet<Point> {
         if visited.contains(&point) || self.card(point) == 0 {
             return HashSet::new();
@@ -259,6 +291,7 @@ impl Board {
         out
     }
 
+    /// All the possible points the current player could move to this ply
     fn legal_moves(&self) -> HashSet<Point> {
         let origin: Point = self.pawns[self.turn];
         let dist = self.card(origin);
@@ -285,6 +318,7 @@ impl Board {
         moves
     }
 
+    /// Modify the board to make the next move to the specified point
     fn make_move(&mut self, point: Point) {
         // Write to history
         let from = self.pawns[self.turn];
@@ -296,6 +330,7 @@ impl Board {
         self.turn = 1 - self.turn;
     }
 
+    /// Undo the latest move
     fn undo_move(&mut self) {
         // Get history
         let (dist, from) = self
@@ -309,11 +344,13 @@ impl Board {
         self.set_card(from, dist);
     }
 
+    /// Change the given card to have the specified value
     fn set_card(&mut self, point: Point, dist: u8) {
         let Point(x, y) = point;
         self.cards[x][y] = dist;
     }
 
+    /// Print the board in a readable way
     fn print(&self) {
         for row in 0..SIZE {
             for col in 0..SIZE {
