@@ -1,5 +1,4 @@
 // TODO:
-// - Tidy up
 // - Solve particular position as input
 // - Web interface with WASM
 
@@ -57,15 +56,13 @@ fn main() {
         let tree_sizes = boards
             .par_iter_mut()
             .tqdm()
-            .map(|(board, weight)| *traverse_game_tree(board, &mut 0) * *weight)
+            .map(|(board, weight)| board.number_of_possible_games() * *weight)
             .sum::<u64>();
-        println!("{} games considered in total", tree_sizes);
+        println!("{} positions considered in total", tree_sizes);
     } else if &args[1] == "--full" {
-        let mut counter = 0;
-        traverse_game_tree(&mut board, &mut counter);
-        println!("{} games considered", counter);
+        println!("{} positions in game tree", board.number_of_possible_games());
     } else if &args[1] == "--simulate" {
-        simulate_game(&mut board);
+        board.simulate_game();
     } else if &args[1] == "--solve" {
         match board.winning_move() {
             Some(m) => println!("R wins by playing {:?}", m),
@@ -79,46 +76,6 @@ fn main() {
     } else {
         println!("{}", USAGE);
     }
-}
-
-fn simulate_game(board: &mut Board) {
-    loop {
-        board.print();
-        println!();
-        let player = if board.turn == 0 { "R" } else { "B" };
-        match board.winning_move() {
-            Some(m) => {
-                println!("{} confidently moves to {:?}", player, m);
-                board.make_move(m);
-            }
-            None => {
-                let moves = board.legal_moves();
-                match moves.into_iter().next() {
-                    Some(m) => {
-                        println!("{} cannot win, but moves to {:?}", player, m);
-                        board.make_move(m);
-                    }
-                    None => {
-                        println!("{} loses", player);
-                        break;
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn traverse_game_tree<'a>(board: &mut Board, counter: &'a mut u64) -> &'a mut u64 {
-    let moves = board.legal_moves(); //.into_iter().sorted().collect();
-    if moves.is_empty() {
-        *counter += 1;
-    }
-    for m in moves {
-        board.make_move(m);
-        traverse_game_tree(board, counter);
-        board.undo_move();
-    }
-    counter
 }
 
 /// A complete description of the current gamestate
@@ -152,6 +109,58 @@ impl Board {
             turn: 0,
             moves: vec![],
         }
+    }
+
+    /// Execute this game, with perfect play on both sides
+    ///
+    /// This board is mutated to the final position, and messages are printed
+    /// along the way.
+    fn simulate_game(&mut self) {
+        loop {
+            self.print();
+            println!();
+            let player = if self.turn == 0 { "R" } else { "B" };
+            match self.winning_move() {
+                Some(m) => {
+                    println!("{} confidently moves to {:?}", player, m);
+                    self.make_move(m);
+                }
+                None => {
+                    let moves = self.legal_moves();
+                    match moves.into_iter().next() {
+                        Some(m) => {
+                            println!("{} cannot win, but moves to {:?}", player, m);
+                            self.make_move(m);
+                        }
+                        None => {
+                            println!("{} loses", player);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// How many possible games could be played out from this position
+    fn number_of_possible_games(&mut self) -> u64 {
+        *self.count_game_tree_leaves(&mut 0)
+    }
+
+    /// Iterate through the whole game tree, adding to the counter for each leaf
+    ///
+    /// This is the recursive function that powers `number_of_possible_games`.
+    fn count_game_tree_leaves<'a>(&mut self, counter: &'a mut u64) -> &'a mut u64 {
+        let moves = self.legal_moves(); //.into_iter().sorted().collect();
+        if moves.is_empty() {
+            *counter += 1;
+        }
+        for m in moves {
+            self.make_move(m);
+            self.count_game_tree_leaves(counter);
+            self.undo_move();
+        }
+        counter
     }
 
     /// All possible boards up to symmetry, with their likelihoods
@@ -196,6 +205,9 @@ impl Board {
     }
 
     /// A winning move from this board state, or None if the position is losing
+    ///
+    /// This mutates the board in-place when searching, but should return it to
+    /// the current position before returning.
     fn winning_move(&mut self) -> Option<Point> {
         for m in self.legal_moves() {
             self.make_move(m);
@@ -368,12 +380,14 @@ impl Board {
     }
 }
 
+/// A single (x,y) coordinate on the board, remembering its torroidal nature
 #[derive(Copy, Clone, Debug, Hash, Ord, PartialOrd, PartialEq, Eq)]
 struct Point(usize, usize);
 
 impl Add for Point {
     type Output = Self;
 
+    /// Add an offset to a point, wrapping if appropriate
     fn add(self, other: Self) -> Self {
         let Self(x, y) = self;
         let Self(dx, dy) = other;
@@ -382,6 +396,7 @@ impl Add for Point {
 }
 
 impl Point {
+    /// Neighbours of a point in all four directions, wrapping if appropriate
     fn neighbors(&self) -> [Point; 4] {
         const DIRECTIONS: [Point; 4] = [
             Point(1, 0),
@@ -393,6 +408,16 @@ impl Point {
     }
 }
 
+/// All ways to arrange cards with the values in `remaining` given the existing
+/// cards in `start`
+///
+/// - `start` is a list of the card values in the first n positions on the
+///   board, with all the other 16-n positions not filled so far.
+/// - `remaining`[i] is the number of cards of value i left to be placed, with i
+///   from 0 (Joker) to 4.
+///
+/// Return value is a list of vectors representing possible boards, where each
+/// one should be exactly 16 long and represent a complete board.
 fn unique_permutations(start: Vec<u8>, remaining: &[u8; 5]) -> Vec<Vec<u8>> {
     //println!("{:?}", start);
     let mut out = vec![];
