@@ -10,8 +10,9 @@
 \usepackage[UKenglish]{isodate}
 \usepackage{pgf-pie}
 \usepackage{tcolorbox}
+\usepackage{xcolor}
 \usepackage{url}
-
+\usepackage{utfsym}
 
 %
 % Macros for rendering grids of cards
@@ -19,6 +20,8 @@
 \tcbset{height=0.9cm, width=0.8cm, valign=center, halign=center, left=0cm, right=0cm, colback=white}
 \newcommand\card[1]{\begin{tcolorbox}#1\end{tcolorbox}}
 \newcommand\emphcard[1]{\begin{tcolorbox}[colback=red!30]#1\end{tcolorbox}}
+\newcommand\redpawn{{\LARGE{\textcolor{red}{\usym{2659}}}}}
+\newcommand\bluepawn{{\LARGE{\textcolor{blue}{\usym{2659}}}}}
 
 \newcommand\customboard[8]{
   \setlength{\tabcolsep}{0.1cm}
@@ -57,7 +60,7 @@
 \maketitle
 
 \abstract{
-  Collapsi is a two-player game of complete information released in June 2025 by
+  Collapsi is a two-player game of complete information released in 2025 by
   Mark~S.~Ball of \emph{Riffle Shuffle \& Roll}. Played with two pawns on a
   toroidal board of 16 randomly mixed playing cards, players take it in turns to
   move based on the value of the card they sit on, with the game ending when a
@@ -67,8 +70,8 @@
   game tree shallow enough, to make an exhaustive analysis of the game
   feasible. A solver was written that can find an optimal move for a given board
   position in around 20 milliseconds. A search was applied revealing that the
-  first player can force a win in 37.5\% of deals, with the second player able
-  to force a win in all others. In 6.4\% of deals the losing player can prolong
+  first player can force a win in 77.7\% of deals, with the second player able
+  to force a win in all others. In 3.5\% of deals the losing player can prolong
   the game to the maximum length of 14 plies; a win can never be forced in fewer
   than 7 plies.
 }
@@ -77,22 +80,26 @@
 \section{The game}
 
 The rules for Collapsi are provided by the designer in an online
-document~\cite{rules} and in the game's introductory video~\cite{youtube}. The
+document~\cite{rules} and in an online video~\cite{youtube}. In the final
+version of the game rules (version 1.3.1) the two players each control one
+coloured pawn, with the first player controlling red and the second player
+blue. The
 board is a set of 16 playing cards taken from a standard deck -- four aces, four
-2s, four 3s, two 4s and two jokers -- shuffled and arranged into a $4\times 4$
-grid, an example layout being shown in Figure~\ref{fig:board}. Each player takes
-a pawn (red or blue) and places it on a joker, then players take turns
+2s, four 3s, two 4s and two jacks -- shuffled and arranged into a $4\times 4$
+grid, an example layout being shown in Figure~\ref{fig:board}.The red pawn is
+placed on the first revealed jack, the blue pawn on the second revealed jack.
+The players then take turns
 (\textit{plies}) to move with red going first.
 
 \begin{figure}[ht]
   \centering
-  \board A223 4A2J 3A23 J3A4
+  \board A223 4A2{\redpawn} 3A23 {\bluepawn}3A4
   \caption{Example Collapsi board layout}
   \label{fig:board}
 \end{figure}
 
-On a player's first turn they are on a joker, and may choose to move 1, 2, 3 or
-4 spaces; on subsequent turns they must move exactly the number of spaces shown
+On a player's first turn they are on a jack, and must move their pawn 1 space;
+on subsequent turns they must move exactly the number of spaces shown
 on the card they begin from, with ace representing 1. Moving is done
 orthogonally and the grid is toroidal so that the top edge is joined to the
 bottom, and the left to the right. On a given move, a pawn may not enter a given
@@ -131,25 +138,25 @@ various symmetries allow us to reduce this search space by eliminating deals
 that are strategically equivalent to others, resulting in a more tractable
 number of deals that need to be considered.
 
-First observe that suit plays no part in the game: all 3s are equivalent, and so
-on. Note also that a player's start position has no effect, since a move of 1,
-2, 3 or 4 allows them to reach any uncovered space on their first ply; this
-means the two jokers can be considered equivalent.
+First observe that suit plays no part in the game: all 3s are equivalent, all 2s
+are equivalent, and so on. The jacks differ only in the colour of the pawns that
+are placed on them.
 
 The toroidal nature of the board means that the bottom row can be moved to the
 top, or the right column moved to the left edge, without materially affecting
 play. Each of these operations can be repeated, so that any row can be chosen as
 the top one and any column as the left one. We exploit this by only considering
-boards with a joker in the top-left corner, without loss of generality.
+boards in which the red pawn starts on a jack in the top-left corner, without
+loss of generality.
 
-We can also constrain the position of the second joker without loss of
+We can also constrain the position of the blue-pawn jack without loss of
 generality, to take advantage of reflections in the board. There are 15 possible
-positions for the second joker, but two such positions are strategically
-equivalent if they have the same $(x, y)$ distance between the first joker and
-the second, possibly including an $x$--$y$ swap (diagonal reflection). The
-possible distances are shown in Figure~\ref{fig:joker-distances}, with one
+positions for the blue-pawn jack, but two such positions are strategically
+equivalent if they have the same $(x, y)$ distance between the two jacks,
+possibly including an $x$--$y$ swap (diagonal reflection). The
+possible distances are shown in Figure~\ref{fig:jack-distances}, with one
 representative of each distance highlighted: these 5 positions are the positions
-considered for the second joker when searching.
+considered for the blue-pawn jack when searching.
 
 \begin{figure}[ht]
   \centering
@@ -158,27 +165,27 @@ considered for the second joker when searching.
   {\card{0,1}} {\emphcard{1,1}} {\emphcard{1,2}} {\card{1,1}}
   {\card{0,2}} {\card{1,2}} {\emphcard{2,2}} {\card{1,2}}
   {\card{0,1}} {\card{1,1}} {\card{1,2}} {\card{1,1}}
-  \caption{Distances of spaces from top-left joker}
-  \label{fig:joker-distances}
+  \caption{Distances of spaces from top-left jack}
+  \label{fig:jack-distances}
 \end{figure}
 
 Though these 5 positions cover all possible deals, they are not equally
-likely. As Figure~\ref{fig:joker-distances} shows, of the 15 positions for the
-second joker: $(0,1)$, $(1,1)$ and $(1,2)$ represent four each; $(0,2)$
+likely. As Figure~\ref{fig:jack-distances} shows, of the 15 positions for the
+second jack: $(0,1)$, $(1,1)$ and $(1,2)$ represent four each; $(0,2)$
 represents two; and $(2,2)$ represents only one. Analysis of statistics for all
 possible deals should therefore weight these positions accordingly.
 
-Overall, with the position of one joker fixed, 5 options for the second joker,
+Overall, with the position of the red-pawn jack fixed, 5 options for the blue-pawn jack,
 and the remaining 14 cards split into three sets of four with the two 4s left
 over, the number of deals that must be considered is equal to
 \[5~\binom{14}{4} \binom{10}{4} \binom{6}{4} = 15~765~750,\]
 a number much more amenable to search than the naive space initially considered.
-After weighting the second joker positions as described above, we can produce
+After weighting the blue-pawn jack positions as described above, we can produce
 data for a total of 47~297~250 deals, which correspond proportionally to a
 uniformly random deal.
 
-Different deals have game trees of different sizes, but informal experiments
-show that around 900~000 possible games can be played from a typical deal.
+Different deals have game trees of different sizes, but experiments show that
+around 100~000 possible games can be played from the start position, on average.
 
 
 \section{Computation}
@@ -194,9 +201,8 @@ goal of finding a winning move, and for the stricter goal of optimising score
 with respect to game length.
 
 Given a particular board, it can be determined whether the current player is in
-a winning position, and if so a winning move can be determined, in around 12
-milliseconds. To find a game-length-perfect move takes slightly longer, around
-18 milliseconds. This algorithm is applicable to any game state including those
+a winning position, and if so a game-length-perfect move can be computed, in around
+0.4 milliseconds. This algorithm is applicable to any game state including those
 reached after suboptimal moves have been played, thus satisfying the definition
 of a \textit{strongly solved} game~\cite{games-solved}. These very short
 computation times suggest that there would be little value in the creation of a
@@ -204,7 +210,7 @@ database of game positions, since the results can be computed on demand for most
 relevant applications.
 
 The result with game-length-perfect play was determined for all deals in a
-search that took 7 hours and 29 minutes using 20 cores. All results can be
+search that took 92 minutes using 20 cores. All results can be
 reproduced by following the instructions provided in the solver's readme
 file~\cite{github}.
 
@@ -222,33 +228,33 @@ number of plies and blue with an even number of plies.
     \textbf{Plies} & \textbf{Deals} & \textbf{(\%)} \\
     \midrule
     $\leq 6$ & 0 & 0.0 \\
-    7 & 24 & 0.0 \\
-    8 & 142~686 & 0.3 \\
-    9 & 87~936 & 0.2 \\
-    10 & 3~238~032 & 6.8 \\
-    11 & 5~505~996 & 11.6 \\
-    12 & 23~147~802 & 48.9 \\
-    13 & 12~127~044 & 25.6 \\
-    14 & 3~047~730 & 6.4 \\
+    7 & 525 & 0.0 \\
+    8 & 9~705 & 0.0 \\
+    9 & 641~520 & 1.4 \\
+    10 & 1~248~372 & 2.6 \\
+    11 & 19~830~630 & 41.9 \\
+    12 & 7~652~868 & 16.2 \\
+    13 & 16~279~812 & 34.4 \\
+    14 & 1~633~818 & 3.5 \\
     \bottomrule
   \end{tabular}
   \caption{Length of game with perfect play}
   \label{tab:game-length}
 \end{table}
 
-A win can never be forced in as few as 6 plies, and there are only 24 deals (8
+A win can never be forced in as few as 6 plies, and there are only 525 deals (177
 up to symmetry) in which red can force a win in the minimum 7 plies, of which
 one is shown in Figure~\ref{fig:win-in-7}.
 
 \begin{figure}[ht]
   \centering
-  \board JA2A 3JA4 2323 34A2
+  \board {\redpawn}341 1{\bluepawn}12 2123 3234
   \caption{A deal where red wins in 7 plies}
   \label{fig:win-in-7}
 \end{figure}
 
-Overall, 17~721~000 deals (37.5\%) are a winning position for red, with the
-remaining 29~576~250 (62.5\%) a winning position for blue, a considerable
+Overall, 36~752~487 deals (77.7\%) are a winning position for red, with the
+remaining 10~544~763 (22.3\%) a winning position for blue, a considerable
 advantage for the second player, as shown in Figure~\ref{fig:win-chance}.
 
 \begin{figure}[ht]
@@ -260,8 +266,8 @@ advantage for the second player, as shown in Figure~\ref{fig:win-chance}.
     rotate=90,
     text=pin
     ]{
-      37.5/Red,
-      62.5/Blue
+      77.7/Red,
+      22.3/Blue
     }
   \end{tikzpicture}
   \caption{Deals won by each player}
@@ -269,19 +275,28 @@ advantage for the second player, as shown in Figure~\ref{fig:win-chance}.
 \end{figure}
 
 
+\section{Old rules}
+
+Prior to game version 1.2.0, each player was allowed to choose a first move of
+1, 2, 3 or 4 spaces from the jack they started on, effectively allowing them to
+move to any face-up space on the board. This game had a rather different
+strategic status, which was also evaluated by the Rust library. The most notable
+difference is the win ratio, with red winning only 37.5\% of deals, compared to
+77.7\% for the new rules. The greater range of player choices also results in a
+much larger search space, with the total search taking around 5 times as long.
+
+
 \section{Future work}
 
-In late June 2025, Collapsi's designer offered an updated set of rules for the
-game, described as version 1.2.0, with minor modifications to the rules for
-movement from jokers. The solver should be expanded to allow for analysis of the
-new game, which may differ in its theoretical status.
+Now that perfect moves can be computed easily, a qualitative analysis of perfect
+moves might yield strategies that players could follow to improve their play,
+especially in the early game where the value of a move can be difficult to
+evaluate.
 
-The game exploration above was performed exhaustively without consideration for
-how this solution could inform human play. Now that a solver exists and perfect
-moves can be retrieved easily, its moves should be considered qualitatively,
-since they might highlight strategies that players could follow without deep
-analysis to improve their play, especially in the early game where it can be
-difficult to understand the value of a move.
+The game rules \cite{rules} also list several variations: \textit{big board},
+\textit{shifting board}, \textit{player's choice}, and \textit{solo game}.
+These profoundly change the nature of the game, and an analysis of their effect
+could be interesting.
 
 
 \section{Acknowledgements}
@@ -294,7 +309,7 @@ version, and to Ben Claydon for some valuable tips on data processing in Rust.
 
 \bibitem{rules}
   M.~S.~Ball.
-  Collapsi 1.1.0.
+  Collapsi 1.3.1.
   Game rules,
   \textit{BoardGameGeek},
   \url{https://bgg.cc/filepage/301918},
@@ -304,10 +319,9 @@ version, and to Ben Claydon for some valuable tips on data processing in Rust.
 
 \bibitem{youtube}
   \textit{Riffle Shuffle \& Roll}.
-  How to Play Collapsi:
-  \textsc{new} two player abstract game with playing cards!
+  How to Play Updated Collapsi: The Shrinking Grid Card Game!
   \textit{YouTube},
-  \url{https://youtu.be/6vYEHdjlw3g},
+  \url{https://youtu.be/FgHkYEFGCXI},
   2025.
 
 \bibitem{endgame}
@@ -323,7 +337,7 @@ version, and to Ben Claydon for some valuable tips on data processing in Rust.
   Rust crate,
   \textit{GitHub},
   \url{https://github.com/mtorpey/collapsi},
-  2025.
+  2026.
 
 \bibitem{games-solved}
   H.~Jaap van den Herik, Jos W.~H.~M.~Uiterwijk, and Jack~van~Rijswijck.
