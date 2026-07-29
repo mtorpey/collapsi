@@ -1,0 +1,10 @@
+$ cargo run -r -- --all-full
+    Finished `release` profile [optimized] target(s) in 0.01s
+     Running `target/release/collapsi --all-full`
+Considering 15765750 boards representing 47297250 deals
+100%|███████████████████| 15765750/15765750 [1492:03<00:00, 176.11it/s]
+4941085937496 game sequences considered in total
+
+4941085937496 positions
+/ 47297250 boards
+= 104469 positions per board

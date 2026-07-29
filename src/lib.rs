@@ -1,13 +1,31 @@
 use itertools::Itertools;
 use std::cmp::Eq;
 use std::collections::HashSet;
+use std::fmt;
 use std::ops::Add;
+use std::sync::LazyLock;
 
 const SIZE: usize = 4;
 
+pub enum CollapsiVersion {
+    V1_1,
+    V1_3,
+}
+
+pub static ALL_POINTS: LazyLock<HashSet<Point>> = LazyLock::new(|| {
+    (0..SIZE)
+        .cartesian_product(0..SIZE)
+        .map(|(x, y)| Point(x, y))
+        .collect()
+});
+
 /// A complete description of the current gamestate
 pub struct Board {
-    /// The values of the cards, with 0 for a flipped card or joker
+    /// The values of the cards in the 4×4 grid
+    ///
+    /// A flipped card is represented by 0. A start space (joker/jack) is
+    /// represented by 0 with old rules (move anywhere) or 1 with new rules
+    /// (move exactly 1).
     cards: [[u8; SIZE]; SIZE],
 
     /// The coordinates of the two pawns, red and blue
@@ -28,9 +46,9 @@ impl Board {
         Board {
             cards: [
                 [1, 2, 2, 3],
-                [4, 1, 2, 0], // should be 0 last
+                [4, 1, 2, 1],
                 [3, 1, 2, 3],
-                [0, 3, 1, 4],
+                [1, 3, 1, 4],
             ],
             pawns: [Point(1, 3), Point(3, 0)],
             turn: 0,
@@ -43,9 +61,10 @@ impl Board {
     /// This board is mutated to the final position, and messages are printed
     /// along the way.
     pub fn simulate_game(&mut self) {
+        let mut game_log = String::new();
         loop {
-            self.print();
-            println!();
+            println!("{}", self); // TODO: make pure
+            game_log += "\n";
             let player = if self.turn == 0 { "R" } else { "B" };
             match self.winning_move() {
                 Some(m) => {
@@ -99,13 +118,17 @@ impl Board {
     ///
     /// Some boards in the set represent more possible boards than others. Each
     /// board is therefore associated with a relative likelihood value.
-    pub fn all_boards() -> Vec<(Board, u64)> {
+    pub fn all_boards(version: CollapsiVersion) -> Vec<(Board, u64)> {
+        let start_value = match version {
+            CollapsiVersion::V1_1 => 0,
+            CollapsiVersion::V1_3 => 1,
+        };
         let mut boards = vec![];
         for (pawn2, weight) in [(1, 4), (2, 2), (5, 4), (6, 4), (10, 1)] {
             for perm in unique_permutations(vec![], &[0, 4, 4, 4, 2]) {
-                let mut cards = vec![0];
+                let mut cards = vec![start_value];  // first pawn at top-left
                 cards.extend_from_slice(&perm[..pawn2 - 1]);
-                cards.push(0);
+                cards.push(start_value);  // second pawn in this position
                 cards.extend_from_slice(&perm[pawn2 - 1..]);
                 //println!("{:?}", cards);
                 boards.push((Board {
@@ -238,15 +261,14 @@ impl Board {
         let origin: Point = self.pawns[self.turn];
         let dist = self.card(origin);
 
-        // Start of game: can move anywhere
+        // Special case for starting position in old rules
         if dist == 0 {
             // all points except starting spaces
-            return HashSet::from_iter(
-                (0..SIZE)
-                    .cartesian_product(0..SIZE)
-                    .map(|(x, y)| Point(x, y))
-                    .filter(|p| self.card(*p) != 0 && !self.pawns.contains(p)),
-            );
+            return ALL_POINTS
+                .iter()
+                .filter(|p| self.card(**p) != 0 && !self.pawns.contains(p))
+                .copied()
+                .collect();
         }
 
         // Otherwise, depth-first search
@@ -291,9 +313,11 @@ impl Board {
         let Point(x, y) = point;
         self.cards[x][y] = dist;
     }
+}
 
-    /// Print the board in a readable way
-    pub fn print(&self) {
+impl fmt::Display for Board {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        writeln!(f, "{}", "-".repeat(SIZE * 3)).expect("simple line");
         for row in 0..SIZE {
             for col in 0..SIZE {
                 let marker = if self.pawns[0] == Point(row, col) {
@@ -303,10 +327,14 @@ impl Board {
                 } else {
                     " "
                 };
-                print!("{}{}{}", marker, self.cards[row][col], marker);
+                write!(f, " {}{}", self.cards[row][col], marker)
+                    .expect("these coordinates are in bounds");
             }
-            println!();
+            writeln!(f).expect("simple newline");
         }
+        writeln!(f, " {} to play", if self.turn == 0 { "R" } else { "B" }).expect("player constrained");
+        write!(f, "{}", "-".repeat(SIZE * 3)).expect("simple line");
+        Ok(())
     }
 }
 
