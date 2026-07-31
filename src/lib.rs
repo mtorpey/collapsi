@@ -1,4 +1,5 @@
 use itertools::Itertools;
+use regex::Regex;
 use std::cmp::Eq;
 use std::collections::HashSet;
 use std::fmt;
@@ -7,12 +8,16 @@ use std::sync::LazyLock;
 
 const SIZE: usize = 4;
 
+/// Version of the Collapsi game as published online, supporting v1.1 and v1.3
 pub enum CollapsiVersion {
+    /// Version 1.1: move 1, 2, 3 or 4 from the starting position
     V1_1,
+
+    /// Version 1.3 (final): move precisely 1 from the starting position
     V1_3,
 }
 
-pub static ALL_POINTS: LazyLock<HashSet<Point>> = LazyLock::new(|| {
+static ALL_POINTS: LazyLock<HashSet<Point>> = LazyLock::new(|| {
     (0..SIZE)
         .cartesian_product(0..SIZE)
         .map(|(x, y)| Point(x, y))
@@ -42,17 +47,89 @@ pub struct Board {
 
 impl Board {
     /// An example start position
-    pub fn new() -> Board {
+    pub fn example() -> Board {
         Board {
-            cards: [
-                [1, 2, 2, 3],
-                [4, 1, 2, 1],
-                [3, 1, 2, 3],
-                [1, 3, 1, 4],
-            ],
+            cards: [[1, 2, 2, 3], [4, 1, 2, 1], [3, 1, 2, 3], [1, 3, 1, 4]],
             pawns: [Point(1, 3), Point(3, 0)],
             turn: 0,
             moves: vec![],
+        }
+    }
+
+    /// Construct a board position from an input string, for example
+    /// "1223/4121r/3123/1b314/0".
+    ///
+    /// 1,2,3,4 is how far you can move from that space.
+    /// 0 represents a face-down card or a joker in v1.1 (move any distance).
+    /// r and b come after the position where the red/blue pawn is located.
+    /// The final number is the number of moves that have occurred.
+    pub fn new(input: &str) -> Result<Board, &str> {
+        // Check red and blue pawns appear once each
+        if !['r', 'b']
+            .iter()
+            .all(|pawn| input.chars().filter(|c| *c == *pawn).count() == 1)
+        {
+            return Err("r and b must appear once each");
+        }
+
+        // Process input using regex
+        let pattern = format!(
+            "^{row}/{row}/{row}/{row}/{turn}$",
+            row = "([01234][rb]?)".repeat(4),
+            turn = r"(?<turn>[0-9]{1,2})"
+        );
+        let re = Regex::new(&pattern).expect("This is a valid pattern");
+        match re.captures(input) {
+            None => Err("Malformed string"),
+            Some(caps) => {
+                Ok(Board {
+                    cards: caps
+                        .iter()
+                        .skip(1) // 0 is the whole match
+                        .take(SIZE * SIZE)
+                        .map(|m| {
+                            m.expect("Each match is for this pattern").as_str()[0..1]
+                                .parse()
+                                .expect("Pattern means this must be a digit")
+                        })
+                        .chunks(SIZE)
+                        .into_iter()
+                        .map(|chunk| {
+                            chunk
+                                .collect::<Vec<u8>>()
+                                .try_into()
+                                .expect("Should be exactly SIZE")
+                        })
+                        .collect::<Vec<[u8; SIZE]>>()
+                        .try_into()
+                        .expect("Should be exactly 16"),
+                    pawns: ['r', 'b']
+                        .iter()
+                        .map(|pawn| {
+                            caps.iter()
+                                .skip(1) // 0 is the whole match
+                                .take(SIZE * SIZE)
+                                .find_position(|m| {
+                                    m.expect("Each match is for this pattern")
+                                        .as_str()
+                                        .contains(*pawn)
+                                })
+                                .expect("We already checked r and b are present")
+                                .0
+                        })
+                        .map(|pos| Point(pos / 4, pos % 4))
+                        .collect::<Vec<Point>>()
+                        .try_into()
+                        .expect("Two values, both should be present"),
+                    turn: caps
+                        .name("turn")
+                        .expect("Turn is required")
+                        .as_str()
+                        .parse()
+                        .expect("Must be digits"),
+                    moves: vec![],
+                })
+            }
         }
     }
 
@@ -126,25 +203,32 @@ impl Board {
         let mut boards = vec![];
         for (pawn2, weight) in [(1, 4), (2, 2), (5, 4), (6, 4), (10, 1)] {
             for perm in unique_permutations(vec![], &[0, 4, 4, 4, 2]) {
-                let mut cards = vec![start_value];  // first pawn at top-left
+                let mut cards = vec![start_value]; // first pawn at top-left
                 cards.extend_from_slice(&perm[..pawn2 - 1]);
-                cards.push(start_value);  // second pawn in this position
+                cards.push(start_value); // second pawn in this position
                 cards.extend_from_slice(&perm[pawn2 - 1..]);
                 //println!("{:?}", cards);
-                boards.push((Board {
-                    cards: [
-                        cards[0..4].try_into().unwrap(),
-                        cards[4..8].try_into().unwrap(),
-                        cards[8..12].try_into().unwrap(),
-                        cards[12..16].try_into().unwrap(),
-                    ],
-                    pawns: [Point(0, 0), Point(pawn2 / 4, pawn2 % 4)],
-                    turn: 0,
-                    moves: vec![],
-                }, weight));
+                boards.push((
+                    Board {
+                        cards: [
+                            cards[0..4].try_into().unwrap(),
+                            cards[4..8].try_into().unwrap(),
+                            cards[8..12].try_into().unwrap(),
+                            cards[12..16].try_into().unwrap(),
+                        ],
+                        pawns: [Point(0, 0), Point(pawn2 / 4, pawn2 % 4)],
+                        turn: 0,
+                        moves: vec![],
+                    },
+                    weight,
+                ));
             }
         }
-        println!("Considering {} boards representing {} deals", boards.len(), boards.iter().map(|(_b, w)| w).sum::<u64>());
+        println!(
+            "Considering {} boards representing {} deals",
+            boards.len(),
+            boards.iter().map(|(_b, w)| w).sum::<u64>()
+        );
         boards
     }
 
@@ -332,7 +416,8 @@ impl fmt::Display for Board {
             }
             writeln!(f).expect("simple newline");
         }
-        writeln!(f, " {} to play", if self.turn == 0 { "R" } else { "B" }).expect("player constrained");
+        writeln!(f, " {} to play", if self.turn == 0 { "R" } else { "B" })
+            .expect("player constrained");
         write!(f, "{}", "-".repeat(SIZE * 3)).expect("simple line");
         Ok(())
     }
@@ -354,6 +439,14 @@ impl Add for Point {
 }
 
 impl Point {
+    pub fn new(x: usize, y: usize) -> Result<Point, &'static str> {
+        if x < SIZE && y < SIZE {
+            Ok(Point(x, y))
+        } else {
+            Err("Out of bounds")
+        }
+    }
+
     /// Neighbours of a point in all four directions, wrapping if appropriate
     fn neighbors(&self) -> [Point; 4] {
         const DIRECTIONS: [Point; 4] = [
