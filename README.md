@@ -8,10 +8,4 @@ Michael Young
 cargo run -r
 ```
 
-Runtime arguments will be printed to the screen, and these all do different things.
-
-To run a computation that calculates the optimal opening move for every possible deal, run
-
-```
-cargo run -r -- --all-length
-```
+This shows usage arguments. See the results/ directory for output from previous runs.
